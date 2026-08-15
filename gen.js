@@ -1,140 +1,132 @@
-// --- DOMContentLoaded taake HTML load hone ke baad script chale ---
-document.addEventListener('DOMContentLoaded', () => {
+let selectedRatio = '1:1';
+let currentImageUrl = '';
 
-    // 1. Auth Check
-    if (localStorage.getItem('ai_logged_in') !== 'true') {
+// Auth Check & Session Load
+window.addEventListener('DOMContentLoaded', () => {
+    const session = JSON.parse(localStorage.getItem('cyber_user'));
+    if (!session || !session.isLoggedIn) {
         window.location.href = 'index.html';
         return;
     }
+    document.getElementById('user-display').innerText = `RUNNER: ${session.username.toUpperCase()}`;
+    loadHistory();
+});
 
-    // 2. Theme Apply on Load
-    const savedTheme = localStorage.getItem('ai_theme') || 'dark';
-    if (savedTheme === 'light') {
-        document.body.classList.add('light-theme');
+function logout() {
+    localStorage.removeItem('cyber_user');
+    window.location.href = 'index.html';
+}
+
+function setRatio(ratio, element) {
+    selectedRatio = ratio;
+    document.querySelectorAll('.ratio-btn').forEach(btn => btn.classList.remove('active'));
+    element.classList.add('active');
+}
+
+async function generateImage() {
+    const prompt = document.getElementById('prompt-input').value.trim();
+    if (!prompt) {
+        alert('Please enter a description for the image.');
+        return;
     }
 
-    // 3. DOM Elements
+    const btnText = document.getElementById('btn-text');
+    const spinner = document.getElementById('btn-spinner');
     const generateBtn = document.getElementById('generate-btn');
-    const promptInput = document.getElementById('prompt-input');
-    const placeholderContent = document.getElementById('placeholder-content');
-    const loader = document.getElementById('loader');
+    const placeholder = document.getElementById('placeholder');
     const outputImage = document.getElementById('output-image');
-    const downloadBtn = document.getElementById('download-btn');
-    const resOptionBtns = document.querySelectorAll('.res-option-btn');
+    const actionBar = document.getElementById('action-bar');
 
-    // 4. Resolution Selection Logic
-    let selectedResolution = '512x512';
+    // UI Loading state
+    btnText.classList.add('hidden');
+    spinner.classList.remove('hidden');
+    generateBtn.disabled = true;
 
-    resOptionBtns.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            resOptionBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            selectedResolution = btn.getAttribute('data-res');
-        });
-    });
+    // Dimensions based on ratio
+    let width = 1024;
+    let height = 1024;
+    if (selectedRatio === '16:9') { width = 1280; height = 720; }
+    if (selectedRatio === '9:16') { width = 720; height = 1280; }
 
-    // API Keys Configuration
-    const API_KEYS = {
-        huggingface: "YAHAN_HUGGINGFACE_KEY_DALO",
-        prodia: "YAHAN_PRODIA_KEY_DALO",
-        stability: "sk-9JjCnaLaxCT1HWbWegCKIWC5SDmo2tmU4F4Hyt9arPxsIL3a"
+    const seed = Math.floor(Math.random() * 999999);
+    const encodedPrompt = encodeURIComponent(prompt);
+    
+    // Quality check from settings if saved
+    const userSettings = JSON.parse(localStorage.getItem('cyber_settings')) || { quality: 'standard' };
+    const enhance = userSettings.quality === 'high' ? 'true' : 'false';
+
+    const imageUrl = `https://pollinations.ai/p/${encodedPrompt}?width=${width}&height=${height}&seed=${seed}&enhance=${enhance}&nologo=true`;
+
+    const imgLoader = new Image();
+    imgLoader.src = imageUrl;
+
+    imgLoader.onload = () => {
+        currentImageUrl = imageUrl;
+        outputImage.src = imageUrl;
+        placeholder.classList.add('hidden');
+        outputImage.classList.remove('hidden');
+        actionBar.classList.remove('hidden');
+
+        // Reset BTN State
+        btnText.classList.remove('hidden');
+        spinner.classList.add('hidden');
+        generateBtn.disabled = false;
+
+        // Save to Local History
+        saveToHistory(prompt, imageUrl);
     };
 
-    // 5. Generate Button Click Event
-    if (generateBtn) {
-        generateBtn.addEventListener('click', async () => {
-            const promptText = promptInput.value.trim();
-            if (!promptText) {
-                alert('Please enter a prompt first!');
-                return;
-            }
+    imgLoader.onerror = () => {
+        alert('Image generation failed. Try again.');
+        btnText.classList.remove('hidden');
+        spinner.classList.add('hidden');
+        generateBtn.disabled = false;
+    };
+}
 
-            // Extract Width and Height
-            const imgWidth = parseInt(selectedResolution.split('x')[0]);
-            const imgHeight = parseInt(selectedResolution.split('x')[1]);
+function saveToHistory(prompt, url) {
+    let history = JSON.parse(localStorage.getItem('cyber_history')) || [];
+    history.unshift({ prompt, url, date: new Date().toISOString() });
+    if (history.length > 10) history.pop(); // Keep last 10
+    localStorage.setItem('cyber_history', JSON.stringify(history));
+    loadHistory();
+}
 
-            // UI Loading State
-            if (placeholderContent) placeholderContent.style.display = 'none';
-            if (outputImage) outputImage.style.display = 'none';
-            if (downloadBtn) downloadBtn.style.display = 'none';
-            if (loader) loader.style.display = 'block';
-            
-            generateBtn.disabled = true;
-            generateBtn.textContent = "Generating via AI Network...";
-
-            let imageUrl = null;
-
-            // --- STEP 1: Try Hugging Face ---
-            try {
-                const response = await fetch("https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1", {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${API_KEYS.huggingface}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ 
-                        inputs: promptText,
-                        parameters: { width: imgWidth, height: imgHeight }
-                    })
-                });
-                if (response.ok) {
-                    const blob = await response.blob();
-                    imageUrl = URL.createObjectURL(blob);
-                }
-            } catch (e) {
-                console.log("Hugging Face failed, switching to Pollinations...");
-            }
-
-            // --- STEP 2: Try Pollinations (Backup) ---
-            if (!imageUrl) {
-                try {
-                    const encodedPrompt = encodeURIComponent(promptText);
-                    const pollUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${imgWidth}&height=${imgHeight}`;
-                    const imgCheck = new Image();
-                    imgCheck.src = pollUrl;
-                    await new Promise((resolve, reject) => {
-                        imgCheck.onload = resolve;
-                        imgCheck.onerror = reject;
-                    });
-                    imageUrl = pollUrl;
-                } catch (e) {
-                    console.log("Pollinations failed.");
-                }
-            }
-
-            // --- Final Result Handling ---
-            if (imageUrl) {
-                if (loader) loader.style.display = 'none';
-                if (outputImage) {
-                    outputImage.src = imageUrl;
-                    outputImage.style.display = 'block';
-                }
-
-                // Show Download Button
-                if (downloadBtn) {
-                    downloadBtn.style.display = 'inline-flex';
-                    downloadBtn.href = imageUrl;
-                }
-
-                // Save to History
-                const history = JSON.parse(localStorage.getItem('ai_history')) || [];
-                const newEntry = {
-                    prompt: promptText,
-                    image: imageUrl,
-                    date: new Date().toLocaleDateString()
-                };
-                history.unshift(newEntry);
-                localStorage.setItem('ai_history', JSON.stringify(history));
-            } else {
-                alert('Image generation failed. Please try again!');
-                if (loader) loader.style.display = 'none';
-                if (placeholderContent) placeholderContent.style.display = 'flex';
-            }
-
-            generateBtn.disabled = false;
-            generateBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Generate';
-        });
+function loadHistory() {
+    const historyGrid = document.getElementById('history-grid');
+    const history = JSON.parse(localStorage.getItem('cyber_history')) || [];
+    
+    if (history.length === 0) {
+        historyGrid.innerHTML = '<p style="color:var(--text-muted); font-size:12px;">No renders saved yet.</p>';
+        return;
     }
-});
-                
+
+    historyGrid.innerHTML = history.map(item => `
+        <div class="history-item" onclick="viewHistoryItem('${item.url}')">
+            <img src="${item.url}" alt="${item.prompt}">
+        </div>
+    `).join('');
+}
+
+function viewHistoryItem(url) {
+    currentImageUrl = url;
+    const outputImage = document.getElementById('output-image');
+    document.getElementById('placeholder').classList.add('hidden');
+    outputImage.src = url;
+    outputImage.classList.remove('hidden');
+    document.getElementById('action-bar').classList.remove('hidden');
+}
+
+function downloadImage() {
+    if (!currentImageUrl) return;
+    const link = document.createElement('a');
+    link.href = currentImageUrl;
+    link.download = `CyberGen_${Date.now()}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function openFullImage() {
+    if (currentImageUrl) window.open(currentImageUrl, '_blank');
+}
