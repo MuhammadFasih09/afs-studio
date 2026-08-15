@@ -1,5 +1,5 @@
 /* ==========================================================================
-   AFS STUDIO // SET.JS (FULL FIXED VERSION)
+   AFS STUDIO // SET.JS (FULL SYNCED VERSION)
    ========================================================================== */
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -19,7 +19,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (usernameInput) usernameInput.value = session.username || '';
     if (emailInput) emailInput.value = session.email || '';
 
-    // 3. Load Preferences & Render History
+    // 3. Load Saved Preferences & Render History
     loadPreferences();
     renderSettingsHistory();
 });
@@ -48,7 +48,7 @@ function logout() {
     window.location.href = 'index.html';
 }
 
-// 4. Update Profile (Name, Email & Password)
+// 4. Update Profile Credentials & Password
 function saveProfile(event) {
     if (event) event.preventDefault();
 
@@ -60,11 +60,11 @@ function saveProfile(event) {
     const confirmPassword = document.getElementById('set-confirm-password')?.value.trim();
 
     if (!newUsername || !newEmail) {
-        alert('Username aur Email field khali nahi ho sakti!');
+        alert('Username aur Email required hain!');
         return;
     }
 
-    // Password Validation Check (Agar user naya password daal raha hai)
+    // Password Validation Check
     if (newPassword || confirmPassword) {
         if (newPassword !== confirmPassword) {
             alert('New Password aur Confirm Password match nahi kar rahay!');
@@ -77,14 +77,16 @@ function saveProfile(event) {
         session.password = newPassword;
     }
 
-    // Update Current Active Session
+    const oldEmail = session.email;
+
+    // Update Session
     session.username = newUsername;
     session.email = newEmail;
     localStorage.setItem('cyber_user', JSON.stringify(session));
 
-    // Update Registered Users Array in LocalStorage (Agar multiple accounts hain)
+    // Update Global Registered Users Array
     let allUsers = JSON.parse(localStorage.getItem('cyber_users')) || [];
-    const userIndex = allUsers.findIndex(u => u.email === session.email || u.username === session.username);
+    const userIndex = allUsers.findIndex(u => u.email === oldEmail || u.username === session.username);
     
     if (userIndex !== -1) {
         allUsers[userIndex].username = newUsername;
@@ -97,15 +99,14 @@ function saveProfile(event) {
     if (document.getElementById('set-password')) document.getElementById('set-password').value = '';
     if (document.getElementById('set-confirm-password')) document.getElementById('set-confirm-password').value = '';
 
-    alert('Profile Credentials & Password Updated Successfully!');
+    alert('Profile & Password successfully update ho gaya hai!');
 }
 
-// 5. Theme Switcher (Flexible for Dark / Cyberpunk / Light)
+// 5. Theme Switcher (Syncs with Image Generator Page)
 function setTheme(theme, btnElement) {
-    // Active class update
+    // Active class update for buttons
     document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
     
-    // Auto detect button if not passed directly
     const targetBtn = btnElement || document.querySelector(`.theme-btn[data-theme="${theme}"]`);
     if (targetBtn) targetBtn.classList.add('active');
 
@@ -115,12 +116,12 @@ function setTheme(theme, btnElement) {
     // Apply selected theme class
     document.body.classList.add(`theme-${theme}`);
 
-    // Save Preference Globally
+    // Save Theme Preference globally for generator page
     const currentSettings = JSON.parse(localStorage.getItem('cyber_settings')) || {};
     currentSettings.theme = theme;
     localStorage.setItem('cyber_settings', JSON.stringify(currentSettings));
     
-    console.log(`[SET.JS] Theme applied: theme-${theme}`);
+    console.log(`[SET.JS] Theme applied globally: theme-${theme}`);
 }
 
 function setQuality(quality, btnElement) {
@@ -148,7 +149,7 @@ function loadPreferences() {
     }
 }
 
-// 6. History Logs Section
+// 6. History Logs Section (Save, View & Clear)
 function renderSettingsHistory() {
     const grid = document.getElementById('settings-history-grid');
     if (!grid) return;
