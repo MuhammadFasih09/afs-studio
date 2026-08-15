@@ -3,71 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CYBERGEN // AI Studio</title>
+    <title>AFS IMG GEN // AI Image Studio</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="gen.css">
 </head>
-<body>
+<body id="app-body">
     <div class="glow-bg"></div>
 
+    <!-- CLEAN & COMPACT NAVBAR -->
     <nav class="navbar">
-        <div class="logo">CYBER<span>GEN</span></div>
+        <div class="logo">AFS <span>IMG GEN</span></div>
         <div class="nav-right">
-            <span id="user-display" class="user-tag">RUNNER: ANONYMOUS</span>
-            <a href="set.html" class="nav-btn-icon" title="System Settings">⚙️ SETTINGS</a>
-            <button class="logout-btn" onclick="logout()">EXIT</button>
+            <a href="set.html" class="nav-btn-icon" title="Settings">⚙️ SETTINGS</a>
         </div>
     </nav>
 
+    <!-- MAIN STUDIO CONTAINER -->
     <main class="studio-container">
-        <!-- Control Panel -->
+        
+        <!-- PROMPT & CONTROLS SECTION -->
         <section class="prompt-section">
-            <div class="section-title">
-                <h2>IMAGE GENERATOR CORE</h2>
-                <p>Enter parameters to render neural visual outputs.</p>
-            </div>
+            <div class="input-card">
+                <label for="prompt-input" class="card-label">ENTER PROMPT</label>
+                <textarea 
+                    id="prompt-input" 
+                    placeholder="Describe the image you want to generate in detail..." 
+                    rows="4"
+                ></textarea>
 
-            <div class="prompt-box">
-                <textarea id="prompt-input" placeholder="A futuristic cyberpunk street with neon signs, rain reflections, anime style..." rows="3"></textarea>
-                <button id="generate-btn" class="cyber-btn" onclick="generateImage()">
-                    <span id="btn-text">GENERATE IMAGE</span>
-                    <div id="btn-spinner" class="spinner hidden"></div>
-                </button>
-            </div>
+                <div class="controls-wrapper">
+                    <!-- ASPECT RATIO SELECTOR -->
+                    <div class="aspect-ratio-group">
+                        <label class="card-label">ASPECT RATIO</label>
+                        <div class="ratio-options">
+                            <button class="ratio-btn active" data-ratio="1:1" onclick="selectRatio('1:1', this)">1:1</button>
+                            <button class="ratio-btn" data-ratio="16:9" onclick="selectRatio('16:9', this)">16:9</button>
+                            <button class="ratio-btn" data-ratio="9:16" onclick="selectRatio('9:16', this)">9:16</button>
+                            <button class="ratio-btn" data-ratio="4:3" onclick="selectRatio('4:3', this)">4:3</button>
+                        </div>
+                    </div>
 
-            <div class="ratio-selector">
-                <label>ASPECT RATIO:</label>
-                <div class="ratio-options">
-                    <button class="ratio-btn active" data-ratio="1:1" onclick="setRatio('1:1', this)">1:1 Square</button>
-                    <button class="ratio-btn" data-ratio="16:9" onclick="setRatio('16:9', this)">16:9 Landscape</button>
-                    <button class="ratio-btn" data-ratio="9:16" onclick="setRatio('9:16', this)">9:16 Portrait</button>
+                    <!-- GENERATE BUTTON -->
+                    <button id="generate-btn" class="cyber-btn main-gen-btn" onclick="generateImage()">
+                        <span>✨ GENERATE IMAGE</span>
+                    </button>
                 </div>
             </div>
         </section>
 
-        <!-- Preview Display -->
-        <section class="display-section">
-            <div class="image-frame" id="image-frame">
-                <div id="placeholder" class="placeholder-text">
-                    <span class="icon">🖼️</span>
-                    <p>SYSTEM IDLE // AWAITING PROMPT INPUT</p>
+        <!-- DISPLAY & OUTPUT SECTION -->
+        <section class="output-section">
+            <div class="output-card">
+                <div id="image-container" class="image-display-area">
+                    <div class="placeholder-content">
+                        <div class="cyber-icon">🎨</div>
+                        <p>Your AI generated artwork will appear here</p>
+                    </div>
                 </div>
-                <img id="output-image" src="" alt="Generated Visual" class="hidden">
-            </div>
 
-            <div id="action-bar" class="action-bar hidden">
-                <button class="action-btn" onclick="downloadImage()">💾 DOWNLOAD</button>
-                <button class="action-btn" onclick="openFullImage()">🔍 FULL VIEW</button>
+                <!-- ACTION BUTTONS (HIDDEN BY DEFAULT UNTIL GENERATED) -->
+                <div id="output-actions" class="output-actions hidden">
+                    <button class="action-btn" onclick="downloadImage()">📥 DOWNLOAD</button>
+                    <button class="action-btn" onclick="copyImageLink()">🔗 COPY LINK</button>
+                </div>
             </div>
         </section>
 
-        <!-- Quick Local History Preview -->
-        <section class="history-preview">
-            <h3>RECENT RENDERS</h3>
-            <div id="history-grid" class="history-grid">
-                <!-- Dynamic Items -->
-            </div>
-        </section>
     </main>
 
     <script src="gen.js"></script>
