@@ -1,132 +1,116 @@
 let selectedRatio = '1:1';
 let currentImageUrl = '';
 
-// Auth Check & Session Load
 window.addEventListener('DOMContentLoaded', () => {
+    // Session Check
     const session = JSON.parse(localStorage.getItem('cyber_user'));
     if (!session || !session.isLoggedIn) {
         window.location.href = 'index.html';
         return;
     }
-    document.getElementById('user-display').innerText = `RUNNER: ${session.username.toUpperCase()}`;
-    loadHistory();
+
+    // Apply Saved Theme Preference
+    const settings = JSON.parse(localStorage.getItem('cyber_settings')) || {};
+    if (settings.theme === 'dark') {
+        document.body.classList.add('theme-dark');
+    }
 });
 
-function logout() {
-    localStorage.removeItem('cyber_user');
-    window.location.href = 'index.html';
-}
-
-function setRatio(ratio, element) {
+function selectRatio(ratio, element) {
     selectedRatio = ratio;
     document.querySelectorAll('.ratio-btn').forEach(btn => btn.classList.remove('active'));
     element.classList.add('active');
 }
 
 async function generateImage() {
-    const prompt = document.getElementById('prompt-input').value.trim();
+    const promptInput = document.getElementById('prompt-input');
+    const prompt = promptInput.value.trim();
+    const displayArea = document.getElementById('image-container');
+    const actionsArea = document.getElementById('output-actions');
+    const genBtn = document.getElementById('generate-btn');
+
     if (!prompt) {
-        alert('Please enter a description for the image.');
+        alert('Please enter a prompt first!');
         return;
     }
 
-    const btnText = document.getElementById('btn-text');
-    const spinner = document.getElementById('btn-spinner');
-    const generateBtn = document.getElementById('generate-btn');
-    const placeholder = document.getElementById('placeholder');
-    const outputImage = document.getElementById('output-image');
-    const actionBar = document.getElementById('action-bar');
+    // UI Loading State
+    genBtn.disabled = true;
+    genBtn.innerHTML = '<span>⚡ GENERATING...</span>';
+    displayArea.innerHTML = `
+        <div class="placeholder-content">
+            <div class="cyber-icon">🔮</div>
+            <p>Rendering high-res neural image...</p>
+        </div>
+    `;
+    actionsArea.classList.add('hidden');
 
-    // UI Loading state
-    btnText.classList.add('hidden');
-    spinner.classList.remove('hidden');
-    generateBtn.disabled = true;
+    try {
+        // Pollinations AI Endpoint
+        const encodedPrompt = encodeURIComponent(prompt);
+        const seed = Math.floor(Math.random() * 999999);
+        const settings = JSON.parse(localStorage.getItem('cyber_settings')) || { quality: 'standard' };
+        
+        let width = 1024;
+        let height = 1024;
 
-    // Dimensions based on ratio
-    let width = 1024;
-    let height = 1024;
-    if (selectedRatio === '16:9') { width = 1280; height = 720; }
-    if (selectedRatio === '9:16') { width = 720; height = 1280; }
+        if (selectedRatio === '16:9') { width = 1280; height = 720; }
+        else if (selectedRatio === '9:16') { width = 720; height = 1280; }
+        else if (selectedRatio === '4:3') { width = 1024; height = 768; }
 
-    const seed = Math.floor(Math.random() * 999999);
-    const encodedPrompt = encodeURIComponent(prompt);
-    
-    // Quality check from settings if saved
-    const userSettings = JSON.parse(localStorage.getItem('cyber_settings')) || { quality: 'standard' };
-    const enhance = userSettings.quality === 'high' ? 'true' : 'false';
+        const imageUrl = `https://pollinations.ai/p/${encodedPrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true`;
 
-    const imageUrl = `https://pollinations.ai/p/${encodedPrompt}?width=${width}&height=${height}&seed=${seed}&enhance=${enhance}&nologo=true`;
+        // Load Image
+        const img = new Image();
+        img.src = imageUrl;
+        img.onload = () => {
+            currentImageUrl = imageUrl;
+            displayArea.innerHTML = `<img src="${imageUrl}" alt="${prompt}">`;
+            actionsArea.classList.remove('hidden');
 
-    const imgLoader = new Image();
-    imgLoader.src = imageUrl;
+            // Save to Local History
+            saveToHistory(prompt, imageUrl);
 
-    imgLoader.onload = () => {
-        currentImageUrl = imageUrl;
-        outputImage.src = imageUrl;
-        placeholder.classList.add('hidden');
-        outputImage.classList.remove('hidden');
-        actionBar.classList.remove('hidden');
+            genBtn.disabled = false;
+            genBtn.innerHTML = '<span>✨ GENERATE IMAGE</span>';
+        };
 
-        // Reset BTN State
-        btnText.classList.remove('hidden');
-        spinner.classList.add('hidden');
-        generateBtn.disabled = false;
+        img.onerror = () => {
+            throw new Error('Failed to render image.');
+        };
 
-        // Save to Local History
-        saveToHistory(prompt, imageUrl);
-    };
-
-    imgLoader.onerror = () => {
-        alert('Image generation failed. Try again.');
-        btnText.classList.remove('hidden');
-        spinner.classList.add('hidden');
-        generateBtn.disabled = false;
-    };
+    } catch (err) {
+        alert('Image generation failed. Please try again.');
+        displayArea.innerHTML = `
+            <div class="placeholder-content">
+                <div class="cyber-icon">❌</div>
+                <p>Generation Error. Try again.</p>
+            </div>
+        `;
+        genBtn.disabled = false;
+        genBtn.innerHTML = '<span>✨ GENERATE IMAGE</span>';
+    }
 }
 
 function saveToHistory(prompt, url) {
     let history = JSON.parse(localStorage.getItem('cyber_history')) || [];
-    history.unshift({ prompt, url, date: new Date().toISOString() });
-    if (history.length > 10) history.pop(); // Keep last 10
+    history.unshift({ prompt, url, date: new Date().toLocaleDateString() });
     localStorage.setItem('cyber_history', JSON.stringify(history));
-    loadHistory();
-}
-
-function loadHistory() {
-    const historyGrid = document.getElementById('history-grid');
-    const history = JSON.parse(localStorage.getItem('cyber_history')) || [];
-    
-    if (history.length === 0) {
-        historyGrid.innerHTML = '<p style="color:var(--text-muted); font-size:12px;">No renders saved yet.</p>';
-        return;
-    }
-
-    historyGrid.innerHTML = history.map(item => `
-        <div class="history-item" onclick="viewHistoryItem('${item.url}')">
-            <img src="${item.url}" alt="${item.prompt}">
-        </div>
-    `).join('');
-}
-
-function viewHistoryItem(url) {
-    currentImageUrl = url;
-    const outputImage = document.getElementById('output-image');
-    document.getElementById('placeholder').classList.add('hidden');
-    outputImage.src = url;
-    outputImage.classList.remove('hidden');
-    document.getElementById('action-bar').classList.remove('hidden');
 }
 
 function downloadImage() {
     if (!currentImageUrl) return;
-    const link = document.createElement('a');
-    link.href = currentImageUrl;
-    link.download = `CyberGen_${Date.now()}.jpg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const a = document.createElement('a');
+    a.href = currentImageUrl;
+    a.download = `AFS-IMG-GEN-${Date.now()}.jpg`;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 }
 
-function openFullImage() {
-    if (currentImageUrl) window.open(currentImageUrl, '_blank');
+function copyImageLink() {
+    if (!currentImageUrl) return;
+    navigator.clipboard.writeText(currentImageUrl);
+    alert('Image URL copied to clipboard!');
 }
