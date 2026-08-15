@@ -5,57 +5,64 @@ window.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // Populate Current User Details
-    document.getElementById('set-username').value = session.username;
-    document.getElementById('set-email').value = session.email;
+    // Populate Input Fields
+    document.getElementById('set-username').value = session.username || '';
+    document.getElementById('set-email').value = session.email || '';
 
-    // Load Preferences & Render History
     loadPreferences();
     renderSettingsHistory();
 });
 
-// Toggle Accordion Panels
 function toggleAccordion(panelId) {
     const panel = document.getElementById(panelId);
-    const parentAccordion = panel.parentElement;
-
+    const parent = panel.parentElement;
     const isOpen = !panel.classList.contains('hidden');
 
-    // Close all panels
     document.querySelectorAll('.accordion-panel').forEach(p => p.classList.add('hidden'));
     document.querySelectorAll('.setting-accordion').forEach(a => a.classList.remove('open'));
 
-    // If it was closed, open it
     if (!isOpen) {
         panel.classList.remove('hidden');
-        parentAccordion.classList.add('open');
+        parent.classList.add('open');
     }
 }
 
-function logout() {
-    localStorage.removeItem('cyber_user');
-    window.location.href = 'index.html';
-}
-
+// REALTIME CREDENTIALS SAVE & LOGIN SYNC
 function saveProfile(event) {
     event.preventDefault();
-    const session = JSON.parse(localStorage.getItem('cyber_user')) || {};
-    
-    session.username = document.getElementById('set-username').value;
-    session.email = document.getElementById('set-email').value;
+    const newUsername = document.getElementById('set-username').value.trim();
+    const newEmail = document.getElementById('set-email').value.trim();
+    const newPassword = document.getElementById('set-pass').value;
 
+    let registeredUser = JSON.parse(localStorage.getItem('cyber_registered_user')) || {};
+    let session = JSON.parse(localStorage.getItem('cyber_user')) || {};
+
+    // Update Registered User Database
+    registeredUser.username = newUsername;
+    registeredUser.email = newEmail;
+    if (newPassword) {
+        registeredUser.password = newPassword;
+    }
+
+    // Update Current Session
+    session.username = newUsername;
+    session.email = newEmail;
+
+    localStorage.setItem('cyber_registered_user', JSON.stringify(registeredUser));
     localStorage.setItem('cyber_user', JSON.stringify(session));
-    alert('User Profile Credentials Updated Successfully!');
+
+    alert('Account details updated successfully! Your new password will be required on next login.');
+    document.getElementById('set-pass').value = '';
 }
 
 function setTheme(theme, btnElement) {
     document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
     btnElement.classList.add('active');
 
-    if (theme === 'dark') {
-        document.body.classList.add('theme-dark');
+    if (theme === 'light') {
+        document.body.classList.add('theme-light');
     } else {
-        document.body.classList.remove('theme-dark');
+        document.body.classList.remove('theme-light');
     }
 
     const currentSettings = JSON.parse(localStorage.getItem('cyber_settings')) || {};
@@ -73,16 +80,16 @@ function setQuality(quality, btnElement) {
 }
 
 function loadPreferences() {
-    const settings = JSON.parse(localStorage.getItem('cyber_settings')) || { quality: 'standard', theme: 'cyberpunk' };
+    const settings = JSON.parse(localStorage.getItem('cyber_settings')) || { quality: 'hd', theme: 'dark' };
 
-    // Apply Quality State
+    // Apply Quality
     const qualityBtn = document.querySelector(`.quality-btn[data-quality="${settings.quality}"]`);
     if (qualityBtn) {
         document.querySelectorAll('.quality-btn').forEach(btn => btn.classList.remove('active'));
         qualityBtn.classList.add('active');
     }
 
-    // Apply Theme State
+    // Apply Theme
     if (settings.theme) {
         const themeBtn = document.querySelector(`.theme-btn[data-theme="${settings.theme}"]`);
         if (themeBtn) setTheme(settings.theme, themeBtn);
@@ -94,7 +101,7 @@ function renderSettingsHistory() {
     const history = JSON.parse(localStorage.getItem('cyber_history')) || [];
 
     if (history.length === 0) {
-        grid.innerHTML = '<p style="color:var(--text-muted); font-size:12px; grid-column:1/-1;">No render logs found.</p>';
+        grid.innerHTML = '<p style="color:var(--text-muted); font-size:12px; grid-column:1/-1;">No generation history found.</p>';
         return;
     }
 
@@ -120,8 +127,13 @@ function deleteHistoryItem(index) {
 }
 
 function clearHistory() {
-    if (confirm('Are you sure you want to clear all generation logs?')) {
+    if (confirm('Are you sure you want to clear all history logs?')) {
         localStorage.removeItem('cyber_history');
         renderSettingsHistory();
     }
+}
+
+function logout() {
+    localStorage.removeItem('cyber_user');
+    window.location.href = 'index.html';
 }
