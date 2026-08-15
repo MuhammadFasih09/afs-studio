@@ -1,5 +1,5 @@
 /* ==========================================================================
-   AFS STUDIO // GEN.JS (FULL FALLBACK & GEN.HTML CONNECTED)
+   AFS STUDIO // GEN.JS (FIXED ASPECT RATIO & FULL FALLBACK)
    ========================================================================== */
 
 let selectedRatio = '1:1';
@@ -31,13 +31,22 @@ function applySavedTheme() {
 // Aspect Ratio Selector Event
 function selectRatio(ratio, btnElement) {
     selectedRatio = ratio;
-    document.querySelectorAll('.ratio-btn').forEach(btn => btn.classList.remove('active'));
+    
+    // UI active state sync
+    const allButtons = document.querySelectorAll('.ratio-btn');
+    allButtons.forEach(btn => btn.classList.remove('active'));
+
     if (btnElement) {
         btnElement.classList.add('active');
+    } else {
+        // Fallback agar button element direct pas na hua ho
+        const targetBtn = document.querySelector(`.ratio-btn[data-ratio="${ratio}"]`);
+        if (targetBtn) targetBtn.classList.add('active');
     }
+    console.log("[GEN.JS] Selected Aspect Ratio:", selectedRatio);
 }
 
-// Convert Aspect Ratio to Dimensions
+// Aspect Ratio to API Dimensions (Multiples of 64 for exact compatibility)
 function getDimensions(ratio) {
     switch (ratio) {
         case '16:9': return { width: 1280, height: 720 };
@@ -75,7 +84,7 @@ async function generateImage() {
     imgContainer.innerHTML = `
         <div class="placeholder-content">
             <div class="cyber-icon loading-spin">⚙️</div>
-            <p id="loader-status-text">Stage 1: Connecting to Hugging Face API...</p>
+            <p id="loader-status-text">Stage 1: Processing image with ${selectedRatio} aspect ratio...</p>
         </div>
     `;
 
@@ -84,7 +93,7 @@ async function generateImage() {
     // STEP 1: Hugging Face API
     try {
         updateStatus("Stage 1: Processing via Hugging Face...");
-        finalImageUrl = await callHuggingFace(promptText, settings.hfKey);
+        finalImageUrl = await callHuggingFace(promptText, settings.hfKey, dimensions);
         console.log("[GEN.JS] Success from Hugging Face");
     } catch (err) {
         console.warn("[GEN.JS] Hugging Face failed, switching to Prodia...", err);
@@ -94,7 +103,7 @@ async function generateImage() {
     if (!finalImageUrl) {
         try {
             updateStatus("Stage 1 Failed. Stage 2: Requesting Prodia API...");
-            finalImageUrl = await callProdia(promptText, settings.prodiaKey);
+            finalImageUrl = await callProdia(promptText, settings.prodiaKey, dimensions);
             console.log("[GEN.JS] Success from Prodia");
         } catch (err) {
             console.warn("[GEN.JS] Prodia failed, switching to Stable Diffusion...", err);
@@ -112,7 +121,7 @@ async function generateImage() {
         }
     }
 
-    // STEP 4: Pollinations AI (Guaranteed Fallback)
+    // STEP 4: Pollinations AI (Guaranteed Aspect Ratio Fallback)
     if (!finalImageUrl) {
         try {
             updateStatus("Stage 3 Failed. Routing to Final Backup: Pollinations AI...");
@@ -129,7 +138,7 @@ async function generateImage() {
     // Handle Output Result
     if (finalImageUrl) {
         currentImageUrl = finalImageUrl;
-        imgContainer.innerHTML = `<img src="${finalImageUrl}" alt="${promptText}" class="generated-render-img" />`;
+        imgContainer.innerHTML = `<img src="${finalImageUrl}" alt="${promptText}" class="generated-render-img" style="aspect-ratio: ${selectedRatio.replace(':', '/')}; object-fit: contain; max-height: 100%; width: 100%;" />`;
         if (actionsDiv) actionsDiv.classList.remove('hidden');
 
         // Log into Settings History
@@ -150,11 +159,11 @@ function updateStatus(message) {
 }
 
 /* ==========================================================================
-   API PROVIDERS
+   API PROVIDERS WITH DYNAMIC DIMENSIONS
    ========================================================================== */
 
 // 1. Hugging Face Provider
-async function callHuggingFace(prompt, apiKey) {
+async function callHuggingFace(prompt, apiKey, dimensions) {
     if (!apiKey) throw new Error("Hugging Face API Key missing in Settings");
 
     const response = await fetch(
@@ -162,7 +171,13 @@ async function callHuggingFace(prompt, apiKey) {
         {
             headers: { Authorization: `Bearer ${apiKey}` },
             method: "POST",
-            body: JSON.stringify({ inputs: prompt }),
+            body: JSON.stringify({ 
+                inputs: prompt,
+                parameters: {
+                    width: dimensions.width,
+                    height: dimensions.height
+                }
+            }),
         }
     );
 
@@ -172,7 +187,7 @@ async function callHuggingFace(prompt, apiKey) {
 }
 
 // 2. Prodia Provider
-async function callProdia(prompt, apiKey) {
+async function callProdia(prompt, apiKey, dimensions) {
     if (!apiKey) throw new Error("Prodia API Key missing in Settings");
 
     const jobRes = await fetch("https://api.prodia.com/v1/sdxl/generate", {
@@ -181,7 +196,12 @@ async function callProdia(prompt, apiKey) {
             "X-Prodia-Key": apiKey,
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({ prompt: prompt, model: "sd_xl_base_1.0.safetensors" })
+        body: JSON.stringify({ 
+            prompt: prompt, 
+            model: "sd_xl_base_1.0.safetensors",
+            width: dimensions.width,
+            height: dimensions.height
+        })
     });
 
     if (!jobRes.ok) throw new Error("Prodia Job Failed");
@@ -244,7 +264,7 @@ async function callStableDiffusion(prompt, apiKey, dimensions) {
 async function callPollinations(prompt, dimensions) {
     const encodedPrompt = encodeURIComponent(prompt);
     const seed = Math.floor(Math.random() * 999999);
-    const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=${dimensions.width}&height=${dimensions.height}&nologo=true`;
+    const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${dimensions.width}&height=${dimensions.height}&seed=${seed}&nologo=true`;
 
     const res = await fetch(pollinationsUrl);
     if (!res.ok) throw new Error("Pollinations endpoint offline");
@@ -260,7 +280,7 @@ function downloadImage() {
     if (!currentImageUrl) return;
     const a = document.createElement('a');
     a.href = currentImageUrl;
-    a.download = `AFS-Studio-${Date.now()}.jpg`;
+    a.download = `AFS-Studio-${selectedRatio.replace(':', 'x')}-${Date.now()}.jpg`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -280,6 +300,7 @@ function saveToHistory(prompt, url) {
     history.unshift({
         prompt: prompt,
         url: url,
+        ratio: selectedRatio,
         timestamp: new Date().toISOString()
     });
 
