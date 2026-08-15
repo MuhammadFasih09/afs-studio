@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AFS Studio</title>
+<link rel="stylesheet" href="gen.css?v=7.7">
+    
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo">AFS IMG Generator</div>
+        <div class="nav-right">
+            <div class="profile-icon" id="profile-icon">
+                <i class="fa-solid fa-user"></i>
+            </div>
+            <a href="set.html" class="settings-btn" id="settings-btn" title="Settings">
+                <i class="fa-solid fa-gear"></i>
+            </a>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <section class="generator-section">
+            <h1>TEXT TO IMAGE <br><span class="brand-sub">By AFS</span></h1>
+            <p>Type a prompt below to generate your AI image.</p>
+            
+            <div class="prompt-box">
+                <textarea id="prompt-input" placeholder="A futuristic cyberpunk city at sunset, highly detailed..."></textarea>
+                
+                <!-- REAL RESOLUTION / ASPECT RATIO OPTIONS -->
+                <div class="resolution-selector">
+                    <button type="button" class="res-option-btn active" data-res="512x512">Square (512x512)</button>
+                    <button type="button" class="res-option-btn" data-res="768x512">Landscape (768x512)</button>
+                    <button type="button" class="res-option-btn" data-res="512x768">Portrait (512x768)</button>
+                    <button type="button" class="res-option-btn" data-res="1024x1024">HD Square (1024x1024)</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="display-section">
+            <div class="image-card" id="image-card">
+                <div class="placeholder-content" id="placeholder-content">
+                    <i class="fa-solid fa-image"></i>
+                    <p>Your generated image will appear here</p>
+                </div>
+                <div class="loader" id="loader" style="display: none;"></div>
+                <img id="output-image" src="" alt="Generated AI Art" style="display: none;">
+            </div>
+        </section>
+    </main>
+
+    <script src="gen.js?v=6.0"></script>
+</body>
+</html>
