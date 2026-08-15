@@ -1,9 +1,15 @@
 /* ==========================================================================
-   AFS STUDIO // GEN.JS (FIXED ASPECT RATIO & FULL FALLBACK)
+   AFS STUDIO // GEN.JS (DYNAMIC API KEYS & ASPECT RATIO INTEGRATED)
    ========================================================================== */
 
 let selectedRatio = '1:1';
 let currentImageUrl = '';
+
+// ==========================================================================
+// DIRECT DEFAULT API KEYS (Yahan apni direct keys daalein)
+// ==========================================================================
+const DEFAULT_HF_KEY = "hf_YOUR_HUGGING_FACE_KEY_HERE"; 
+const DEFAULT_SD_KEY = "sk-YOUR_STABILITY_AI_KEY_HERE";
 
 window.addEventListener('DOMContentLoaded', () => {
     console.log("[GEN.JS] Studio initialized successfully.");
@@ -39,7 +45,6 @@ function selectRatio(ratio, btnElement) {
     if (btnElement) {
         btnElement.classList.add('active');
     } else {
-        // Fallback agar button element direct pas na hua ho
         const targetBtn = document.querySelector(`.ratio-btn[data-ratio="${ratio}"]`);
         if (targetBtn) targetBtn.classList.add('active');
     }
@@ -73,8 +78,12 @@ async function generateImage() {
         return;
     }
 
-    // Keys from LocalStorage (Saved in set.html)
+    // Settings se keys uthayen ga, agar blank ho tou DEFAULT_KEYS use hongi
     const settings = JSON.parse(localStorage.getItem('cyber_settings')) || {};
+    const hfApiKey = settings.hfKey || settings.huggingFaceKey || DEFAULT_HF_KEY;
+    const sdApiKey = settings.sdKey || settings.stabilityKey || DEFAULT_SD_KEY;
+    const prodiaApiKey = settings.prodiaKey || '';
+
     const dimensions = getDimensions(selectedRatio);
 
     // Loader UI
@@ -92,39 +101,39 @@ async function generateImage() {
 
     // STEP 1: Hugging Face API
     try {
-        updateStatus("Stage 1: Processing via Hugging Face...");
-        finalImageUrl = await callHuggingFace(promptText, settings.hfKey, dimensions);
+        updateStatus("Stage 1: Requesting Hugging Face API...");
+        finalImageUrl = await callHuggingFace(promptText, hfApiKey, dimensions);
         console.log("[GEN.JS] Success from Hugging Face");
     } catch (err) {
-        console.warn("[GEN.JS] Hugging Face failed, switching to Prodia...", err);
+        console.warn("[GEN.JS] Hugging Face failed/skipped, switching to Prodia/Stability...", err.message);
     }
 
     // STEP 2: Prodia API
     if (!finalImageUrl) {
         try {
-            updateStatus("Stage 1 Failed. Stage 2: Requesting Prodia API...");
-            finalImageUrl = await callProdia(promptText, settings.prodiaKey, dimensions);
+            updateStatus("Stage 2: Requesting Prodia API...");
+            finalImageUrl = await callProdia(promptText, prodiaApiKey, dimensions);
             console.log("[GEN.JS] Success from Prodia");
         } catch (err) {
-            console.warn("[GEN.JS] Prodia failed, switching to Stable Diffusion...", err);
+            console.warn("[GEN.JS] Prodia failed/skipped, switching to Stability AI...", err.message);
         }
     }
 
-    // STEP 3: Stable Diffusion API
+    // STEP 3: Stability AI / Stable Diffusion API
     if (!finalImageUrl) {
         try {
-            updateStatus("Stage 2 Failed. Stage 3: Requesting Stable Diffusion...");
-            finalImageUrl = await callStableDiffusion(promptText, settings.sdKey, dimensions);
-            console.log("[GEN.JS] Success from Stable Diffusion");
+            updateStatus("Stage 3: Requesting Stability AI API...");
+            finalImageUrl = await callStableDiffusion(promptText, sdApiKey, dimensions);
+            console.log("[GEN.JS] Success from Stability AI");
         } catch (err) {
-            console.warn("[GEN.JS] Stable Diffusion failed, switching to Pollinations AI...", err);
+            console.warn("[GEN.JS] Stability AI failed/skipped, switching to Pollinations AI...", err.message);
         }
     }
 
-    // STEP 4: Pollinations AI (Guaranteed Aspect Ratio Fallback)
+    // STEP 4: Pollinations AI (Guaranteed No-Key Local/Fallback Route)
     if (!finalImageUrl) {
         try {
-            updateStatus("Stage 3 Failed. Routing to Final Backup: Pollinations AI...");
+            updateStatus("Routing to Final Backup: Pollinations AI...");
             finalImageUrl = await callPollinations(promptText, dimensions);
             console.log("[GEN.JS] Success from Pollinations AI");
         } catch (err) {
@@ -141,7 +150,7 @@ async function generateImage() {
         imgContainer.innerHTML = `<img src="${finalImageUrl}" alt="${promptText}" class="generated-render-img" style="aspect-ratio: ${selectedRatio.replace(':', '/')}; object-fit: contain; max-height: 100%; width: 100%;" />`;
         if (actionsDiv) actionsDiv.classList.remove('hidden');
 
-        // Log into Settings History
+        // Save into LocalStorage History
         saveToHistory(promptText, finalImageUrl);
     } else {
         imgContainer.innerHTML = `
@@ -159,17 +168,22 @@ function updateStatus(message) {
 }
 
 /* ==========================================================================
-   API PROVIDERS WITH DYNAMIC DIMENSIONS
+   API PROVIDERS WITH DYNAMIC KEYS & DIMENSIONS
    ========================================================================== */
 
 // 1. Hugging Face Provider
 async function callHuggingFace(prompt, apiKey, dimensions) {
-    if (!apiKey) throw new Error("Hugging Face API Key missing in Settings");
+    if (!apiKey || apiKey.includes("YOUR_HUGGING_FACE_KEY_HERE")) {
+        throw new Error("Hugging Face API Key is missing or invalid.");
+    }
 
     const response = await fetch(
         "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
         {
-            headers: { Authorization: `Bearer ${apiKey}` },
+            headers: { 
+                "Authorization": `Bearer ${apiKey}`,
+                "Content-Type": "application/json"
+            },
             method: "POST",
             body: JSON.stringify({ 
                 inputs: prompt,
@@ -181,14 +195,14 @@ async function callHuggingFace(prompt, apiKey, dimensions) {
         }
     );
 
-    if (!response.ok) throw new Error(`Hugging Face Error: ${response.status}`);
+    if (!response.ok) throw new Error(`Hugging Face Error Code: ${response.status}`);
     const blob = await response.blob();
     return URL.createObjectURL(blob);
 }
 
 // 2. Prodia Provider
 async function callProdia(prompt, apiKey, dimensions) {
-    if (!apiKey) throw new Error("Prodia API Key missing in Settings");
+    if (!apiKey) throw new Error("Prodia API Key missing");
 
     const jobRes = await fetch("https://api.prodia.com/v1/sdxl/generate", {
         method: "POST",
@@ -231,9 +245,11 @@ async function callProdia(prompt, apiKey, dimensions) {
     return imgResult;
 }
 
-// 3. Stable Diffusion Provider
+// 3. Stability AI / Stable Diffusion Provider
 async function callStableDiffusion(prompt, apiKey, dimensions) {
-    if (!apiKey) throw new Error("Stable Diffusion API Key missing in Settings");
+    if (!apiKey || apiKey.includes("YOUR_STABILITY_AI_KEY_HERE")) {
+        throw new Error("Stability AI API Key is missing or invalid.");
+    }
 
     const response = await fetch(
         "https://api.stability.ai/v1/generation/stable-diffusion-v1-6/text-to-image",
@@ -255,12 +271,12 @@ async function callStableDiffusion(prompt, apiKey, dimensions) {
         }
     );
 
-    if (!response.ok) throw new Error("Stability AI failed");
+    if (!response.ok) throw new Error(`Stability AI Error Code: ${response.status}`);
     const data = await response.json();
     return `data:image/jpeg;base64,${data.artifacts[0].base64}`;
 }
 
-// 4. Pollinations AI Provider (Dynamic Backup)
+// 4. Pollinations AI Provider (Direct Backup Route)
 async function callPollinations(prompt, dimensions) {
     const encodedPrompt = encodeURIComponent(prompt);
     const seed = Math.floor(Math.random() * 999999);
