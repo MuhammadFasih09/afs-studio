@@ -1,172 +1,205 @@
 /* ==========================================================================
-   AFS STUDIO // GEN.JS (API FALLBACK SYSTEM & THEME SYNC)
+   AFS STUDIO // GEN.JS (FULL FALLBACK & GEN.HTML CONNECTED)
    ========================================================================== */
 
-// API CONFIGURATIONS (Apni Keys Yahan Add Karein)
-const API_KEYS = {
-    HUGGING_FACE: "hf_YOUR_HUGGINGFACE_API_KEY_HERE",
-    PRODIA: "YOUR_PRODIA_API_KEY_HERE",
-    STABLE_DIFFUSION: "sk-YOUR_STABILITY_AI_KEY_HERE"
-};
+let selectedRatio = '1:1';
+let currentImageUrl = '';
 
 window.addEventListener('DOMContentLoaded', () => {
-    console.log("[GEN.JS] Initializing Generator Page...");
+    console.log("[GEN.JS] Studio initialized successfully.");
 
-    // 1. Session Protection Check
+    // 1. Session Protection
     const session = JSON.parse(localStorage.getItem('cyber_user'));
     if (!session || !session.isLoggedIn) {
         window.location.href = 'index.html';
         return;
     }
 
-    // 2. Global Theme Syncing On Load
+    // 2. Global Theme Application
     applySavedTheme();
-
-    // 3. Form Submit Listener Setup
-    const genForm = document.getElementById('gen-form') || document.getElementById('generate-form');
-    if (genForm) {
-        genForm.addEventListener('submit', handleImageGeneration);
-    }
 });
 
-// Theme Application Helper
+// Apply Theme Saved from Settings
 function applySavedTheme() {
     const settings = JSON.parse(localStorage.getItem('cyber_settings')) || { theme: 'cyberpunk' };
     if (settings.theme) {
         document.body.classList.remove('theme-dark', 'theme-light', 'theme-cyberpunk');
         document.body.classList.add(`theme-${settings.theme}`);
-        console.log(`[GEN.JS] Theme applied: theme-${settings.theme}`);
     }
 }
 
-// Main Generation Controller
-async function handleImageGeneration(event) {
-    if (event) event.preventDefault();
+// Aspect Ratio Selector Event
+function selectRatio(ratio, btnElement) {
+    selectedRatio = ratio;
+    document.querySelectorAll('.ratio-btn').forEach(btn => btn.classList.remove('active'));
+    if (btnElement) {
+        btnElement.classList.add('active');
+    }
+}
 
-    const promptInput = document.getElementById('gen-prompt') || document.getElementById('prompt-input');
+// Convert Aspect Ratio to Dimensions
+function getDimensions(ratio) {
+    switch (ratio) {
+        case '16:9': return { width: 1280, height: 720 };
+        case '9:16': return { width: 720, height: 1280 };
+        case '4:3':  return { width: 1024, height: 768 };
+        case '1:1':
+        default:     return { width: 1024, height: 1024 };
+    }
+}
+
+/* ==========================================================================
+   MAIN GENERATION ENGINE & FALLBACK SYSTEM
+   ========================================================================== */
+
+async function generateImage() {
+    const promptInput = document.getElementById('prompt-input');
     const promptText = promptInput ? promptInput.value.trim() : '';
+    const genBtn = document.getElementById('generate-btn');
+    const imgContainer = document.getElementById('image-container');
+    const actionsDiv = document.getElementById('output-actions');
 
     if (!promptText) {
-        alert('Please enter a prompt!');
+        alert('Aap pehle prompt enter karein!');
         return;
     }
 
-    showLoader(true, "Initializing Fallback Sequence...");
+    // Keys from LocalStorage (Saved in set.html)
+    const settings = JSON.parse(localStorage.getItem('cyber_settings')) || {};
+    const dimensions = getDimensions(selectedRatio);
 
-    let imageUrl = null;
+    // Loader UI
+    if (genBtn) genBtn.disabled = true;
+    if (actionsDiv) actionsDiv.classList.add('hidden');
 
-    // STEP 1: Try Hugging Face API
+    imgContainer.innerHTML = `
+        <div class="placeholder-content">
+            <div class="cyber-icon loading-spin">⚙️</div>
+            <p id="loader-status-text">Stage 1: Connecting to Hugging Face API...</p>
+        </div>
+    `;
+
+    let finalImageUrl = null;
+
+    // STEP 1: Hugging Face API
     try {
-        updateLoaderStatus("Requesting Stage 1: Hugging Face API...");
-        imageUrl = await callHuggingFaceAPI(promptText);
-        console.log("[GEN.JS] Success from Hugging Face API");
+        updateStatus("Stage 1: Processing via Hugging Face...");
+        finalImageUrl = await callHuggingFace(promptText, settings.hfKey);
+        console.log("[GEN.JS] Success from Hugging Face");
     } catch (err) {
         console.warn("[GEN.JS] Hugging Face failed, switching to Prodia...", err);
     }
 
-    // STEP 2: Try Prodia API
-    if (!imageUrl) {
+    // STEP 2: Prodia API
+    if (!finalImageUrl) {
         try {
-            updateLoaderStatus("Stage 1 Failed. Requesting Stage 2: Prodia API...");
-            imageUrl = await callProdiaAPI(promptText);
-            console.log("[GEN.JS] Success from Prodia API");
+            updateStatus("Stage 1 Failed. Stage 2: Requesting Prodia API...");
+            finalImageUrl = await callProdia(promptText, settings.prodiaKey);
+            console.log("[GEN.JS] Success from Prodia");
         } catch (err) {
             console.warn("[GEN.JS] Prodia failed, switching to Stable Diffusion...", err);
         }
     }
 
-    // STEP 3: Try Stable Diffusion (Stability AI) API
-    if (!imageUrl) {
+    // STEP 3: Stable Diffusion API
+    if (!finalImageUrl) {
         try {
-            updateLoaderStatus("Stage 2 Failed. Requesting Stage 3: Stable Diffusion...");
-            imageUrl = await callStableDiffusionAPI(promptText);
-            console.log("[GEN.JS] Success from Stable Diffusion API");
+            updateStatus("Stage 2 Failed. Stage 3: Requesting Stable Diffusion...");
+            finalImageUrl = await callStableDiffusion(promptText, settings.sdKey, dimensions);
+            console.log("[GEN.JS] Success from Stable Diffusion");
         } catch (err) {
             console.warn("[GEN.JS] Stable Diffusion failed, switching to Pollinations AI...", err);
         }
     }
 
-    // STEP 4: Fallback to Pollinations AI (Guaranteed Unlimited Free Route)
-    if (!imageUrl) {
+    // STEP 4: Pollinations AI (Guaranteed Fallback)
+    if (!finalImageUrl) {
         try {
-            updateLoaderStatus("Stage 3 Failed. Re-routing to Final Backup: Pollinations AI...");
-            imageUrl = await callPollinationsAPI(promptText);
+            updateStatus("Stage 3 Failed. Routing to Final Backup: Pollinations AI...");
+            finalImageUrl = await callPollinations(promptText, dimensions);
             console.log("[GEN.JS] Success from Pollinations AI");
         } catch (err) {
-            console.error("[GEN.JS] All Generation APIs failed.", err);
+            console.error("[GEN.JS] All APIs failed.", err);
         }
     }
 
-    showLoader(false);
+    // Reset Button State
+    if (genBtn) genBtn.disabled = false;
 
-    // Render & Save Image
-    if (imageUrl) {
-        displayGeneratedImage(imageUrl, promptText);
-        saveToCyberHistory(promptText, imageUrl);
+    // Handle Output Result
+    if (finalImageUrl) {
+        currentImageUrl = finalImageUrl;
+        imgContainer.innerHTML = `<img src="${finalImageUrl}" alt="${promptText}" class="generated-render-img" />`;
+        if (actionsDiv) actionsDiv.classList.remove('hidden');
+
+        // Log into Settings History
+        saveToHistory(promptText, finalImageUrl);
     } else {
-        alert("Image generation failed across all fallback endpoints. Please check network or API keys.");
+        imgContainer.innerHTML = `
+            <div class="placeholder-content">
+                <div class="cyber-icon">❌</div>
+                <p>Image generation failed across all routes. Please check your network connection.</p>
+            </div>
+        `;
     }
 }
 
+function updateStatus(message) {
+    const statusEl = document.getElementById('loader-status-text');
+    if (statusEl) statusEl.innerText = message;
+}
+
 /* ==========================================================================
-   API PROVIDERS (CHAIN OF RESPONSIBILITY)
+   API PROVIDERS
    ========================================================================== */
 
 // 1. Hugging Face Provider
-async function callHuggingFaceAPI(prompt) {
-    if (!API_KEYS.HUGGING_FACE || API_KEYS.HUGGING_FACE.includes("YOUR_")) {
-        throw new Error("Hugging Face API Key missing");
-    }
+async function callHuggingFace(prompt, apiKey) {
+    if (!apiKey) throw new Error("Hugging Face API Key missing in Settings");
 
     const response = await fetch(
         "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
         {
-            headers: { Authorization: `Bearer ${API_KEYS.HUGGING_FACE}` },
+            headers: { Authorization: `Bearer ${apiKey}` },
             method: "POST",
             body: JSON.stringify({ inputs: prompt }),
         }
     );
 
-    if (!response.ok) throw new Error(`Hugging Face Error Status: ${response.status}`);
-
+    if (!response.ok) throw new Error(`Hugging Face Error: ${response.status}`);
     const blob = await response.blob();
     return URL.createObjectURL(blob);
 }
 
 // 2. Prodia Provider
-async function callProdiaAPI(prompt) {
-    if (!API_KEYS.PRODIA || API_KEYS.PRODIA.includes("YOUR_")) {
-        throw new Error("Prodia API Key missing");
-    }
+async function callProdia(prompt, apiKey) {
+    if (!apiKey) throw new Error("Prodia API Key missing in Settings");
 
-    // Step A: Job Creation
     const jobRes = await fetch("https://api.prodia.com/v1/sdxl/generate", {
         method: "POST",
         headers: {
-            "X-Prodia-Key": API_KEYS.PRODIA,
+            "X-Prodia-Key": apiKey,
             "Content-Type": "application/json"
         },
         body: JSON.stringify({ prompt: prompt, model: "sd_xl_base_1.0.safetensors" })
     });
 
-    if (!jobRes.ok) throw new Error("Prodia Job Submission Failed");
+    if (!jobRes.ok) throw new Error("Prodia Job Failed");
     const jobData = await jobRes.json();
-    const jobId = jobData.job;
 
-    // Step B: Polling status until completed
     let status = "queued";
     let imgResult = null;
     let attempts = 0;
 
-    while (status !== "succeeded" && attempts < 15) {
+    while (status !== "succeeded" && attempts < 12) {
         await new Promise(r => setTimeout(r, 2000));
-        const statusRes = await fetch(`https://api.prodia.com/v1/job/${jobId}`, {
-            headers: { "X-Prodia-Key": API_KEYS.PRODIA }
+        const statusRes = await fetch(`https://api.prodia.com/v1/job/${jobData.job}`, {
+            headers: { "X-Prodia-Key": apiKey }
         });
         const statusData = await statusRes.json();
         status = statusData.status;
 
-        if (status === "failed") throw new Error("Prodia Generation Failed");
+        if (status === "failed") throw new Error("Prodia generation failed");
         if (status === "succeeded") {
             imgResult = statusData.imageUrl;
             break;
@@ -174,15 +207,13 @@ async function callProdiaAPI(prompt) {
         attempts++;
     }
 
-    if (!imgResult) throw new Error("Prodia Request Timed Out");
+    if (!imgResult) throw new Error("Prodia request timed out");
     return imgResult;
 }
 
-// 3. Stable Diffusion (Stability AI) Provider
-async function callStableDiffusionAPI(prompt) {
-    if (!API_KEYS.STABLE_DIFFUSION || API_KEYS.STABLE_DIFFUSION.includes("YOUR_")) {
-        throw new Error("Stability AI Key missing");
-    }
+// 3. Stable Diffusion Provider
+async function callStableDiffusion(prompt, apiKey, dimensions) {
+    if (!apiKey) throw new Error("Stable Diffusion API Key missing in Settings");
 
     const response = await fetch(
         "https://api.stability.ai/v1/generation/stable-diffusion-v1-6/text-to-image",
@@ -191,57 +222,60 @@ async function callStableDiffusionAPI(prompt) {
             headers: {
                 "Content-Type": "application/json",
                 Accept: "application/json",
-                Authorization: `Bearer ${API_KEYS.STABLE_DIFFUSION}`,
+                Authorization: `Bearer ${apiKey}`,
             },
             body: JSON.stringify({
                 text_prompts: [{ text: prompt }],
                 cfg_scale: 7,
-                height: 512,
-                width: 512,
+                height: dimensions.height > 1024 ? 1024 : dimensions.height,
+                width: dimensions.width > 1024 ? 1024 : dimensions.width,
                 steps: 30,
                 samples: 1,
             }),
         }
     );
 
-    if (!response.ok) throw new Error("Stability AI API Request Failed");
-    const responseJSON = await response.json();
-    
-    const base64Image = responseJSON.artifacts[0].base64;
-    return `data:image/jpeg;base64,${base64Image}`;
+    if (!response.ok) throw new Error("Stability AI failed");
+    const data = await response.json();
+    return `data:image/jpeg;base64,${data.artifacts[0].base64}`;
 }
 
-// 4. Pollinations AI Provider (Dynamic Fallback)
-async function callPollinationsAPI(prompt) {
+// 4. Pollinations AI Provider (Dynamic Backup)
+async function callPollinations(prompt, dimensions) {
     const encodedPrompt = encodeURIComponent(prompt);
-    const randomSeed = Math.floor(Math.random() * 999999);
-    const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${randomSeed}&width=1024&height=1024&nologo=true`;
+    const seed = Math.floor(Math.random() * 999999);
+    const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=${dimensions.width}&height=${dimensions.height}&nologo=true`;
 
-    // Pre-verify image response
     const res = await fetch(pollinationsUrl);
-    if (!res.ok) throw new Error("Pollinations Endpoint Unreachable");
+    if (!res.ok) throw new Error("Pollinations endpoint offline");
 
     return pollinationsUrl;
 }
 
 /* ==========================================================================
-   UI HELPER & HISTORY STORAGE
+   ACTIONS & HISTORY HELPERS
    ========================================================================== */
 
-function displayGeneratedImage(url, prompt) {
-    const outputContainer = document.getElementById('gen-output') || document.getElementById('image-result');
-    if (outputContainer) {
-        outputContainer.innerHTML = `
-            <div class="generated-image-card">
-                <img src="${url}" alt="${prompt}" class="res-img" />
-                <p class="res-prompt">${prompt}</p>
-                <a href="${url}" download="afs-studio-render.jpg" target="_blank" class="download-btn">DOWNLOAD IMAGE</a>
-            </div>
-        `;
-    }
+function downloadImage() {
+    if (!currentImageUrl) return;
+    const a = document.createElement('a');
+    a.href = currentImageUrl;
+    a.download = `AFS-Studio-${Date.now()}.jpg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 }
 
-function saveToCyberHistory(prompt, url) {
+function copyImageLink() {
+    if (!currentImageUrl) return;
+    navigator.clipboard.writeText(currentImageUrl).then(() => {
+        alert('Image URL copied to clipboard!');
+    }).catch(err => {
+        console.error('Could not copy link: ', err);
+    });
+}
+
+function saveToHistory(prompt, url) {
     let history = JSON.parse(localStorage.getItem('cyber_history')) || [];
     history.unshift({
         prompt: prompt,
@@ -249,28 +283,6 @@ function saveToCyberHistory(prompt, url) {
         timestamp: new Date().toISOString()
     });
 
-    // Limit log capacity to latest 30 items
     if (history.length > 30) history.pop();
-
     localStorage.setItem('cyber_history', JSON.stringify(history));
-    console.log("[GEN.JS] Image logged into history successfully.");
-}
-
-function showLoader(show, message = "Generating Image...") {
-    const loader = document.getElementById('gen-loader');
-    const loaderText = document.getElementById('loader-status');
-    
-    if (loader) {
-        loader.style.display = show ? 'flex' : 'none';
-    }
-    if (loaderText) {
-        loaderText.innerText = message;
-    }
-}
-
-function updateLoaderStatus(message) {
-    const loaderText = document.getElementById('loader-status');
-    if (loaderText) {
-        loaderText.innerText = message;
-    }
 }
