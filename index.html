@@ -3,56 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AFS IMG GEN // Login / Sign-up Page</title>
+    <title>AFS IMG GEN // Login / Sign-Up Page</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body id="app-body">
     <div class="glow-bg"></div>
 
-    <div class="auth-wrapper">
-        <div class="auth-card">
-            <!-- BRANDING HEADER -->
-            <div class="auth-header">
-                <h1 class="logo">AFS <span>IMG GEN</span></h1>
-            </div>
+    <nav class="navbar">
+        <div class="logo">AFS <span>IMG GEN</span></div>
+    </nav>
 
-            <!-- TAB CONTROLS -->
+    <main class="auth-wrapper">
+        <div class="auth-card">
+            
+            <!-- AUTH TAB SWITCHER -->
             <div class="auth-tabs">
-                <button id="login-tab" class="tab-btn active" onclick="switchTab('login')">LOGIN</button>
-                <button id="signup-tab" class="tab-btn" onclick="switchTab('signup')">SIGN UP</button>
+                <button id="tab-login" class="tab-btn active" onclick="switchTab('login')">LOGIN</button>
+                <button id="tab-signup" class="tab-btn" onclick="switchTab('signup')">SIGN UP</button>
             </div>
 
             <!-- LOGIN FORM -->
             <form id="login-form" class="auth-form" onsubmit="handleLogin(event)">
                 <div class="input-group">
-                    <label for="login-email">EMAIL</label>
-                    <input type="email" id="login-email" placeholder="enter your email..." required>
+                    <label for="login-username">USERNAME OR EMAIL</label>
+                    <input type="text" id="login-username" placeholder="Enter username or email" required autocomplete="username">
                 </div>
                 <div class="input-group">
                     <label for="login-password">PASSWORD</label>
-                    <input type="password" id="login-password" placeholder="••••••••" required>
+                    <input type="password" id="login-password" placeholder="Enter password" required autocomplete="current-password">
                 </div>
-                <button type="submit" class="cyber-btn">LOGIN</button>
+                <button type="submit" class="cyber-btn auth-submit-btn">ACCESS STUDIO ⚡</button>
             </form>
 
-            <!-- SIGN UP FORM -->
+            <!-- SIGNUP FORM -->
             <form id="signup-form" class="auth-form hidden" onsubmit="handleSignup(event)">
                 <div class="input-group">
                     <label for="signup-username">USERNAME</label>
-                    <input type="text" id="signup-username" placeholder="choose username..." required>
+                    <input type="text" id="signup-username" placeholder="Choose a username" required autocomplete="username">
                 </div>
                 <div class="input-group">
-                    <label for="signup-email">EMAIL</label>
-                    <input type="email" id="signup-email" placeholder="enter email address..." required>
+                    <label for="signup-email">EMAIL ADDRESS</label>
+                    <input type="email" id="signup-email" placeholder="Enter your email" required autocomplete="email">
                 </div>
                 <div class="input-group">
-                    <label for="signup-password">CREATE PASSWORD</label>
-                    <input type="password" id="signup-password" placeholder="••••••••" required>
+                    <label for="signup-password">PASSWORD</label>
+                    <input type="password" id="signup-password" placeholder="Create a strong password" required autocomplete="new-password">
                 </div>
-                <button type="submit" class="cyber-btn">CREATE ACCOUNT</button>
+                <button type="submit" class="cyber-btn auth-submit-btn">CREATE ACCOUNT 🚀</button>
             </form>
+
+            <div id="auth-error" class="auth-error-msg hidden"></div>
+
         </div>
-    </div>
+    </main>
 
     <script src="script.js"></script>
 </body>
