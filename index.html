@@ -3,35 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - AI Text to Image</title>
-<link rel="stylesheet" href="gen.css?v=7.7">
-    
+    <title>Login / Sign-up Page</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-<body> 
-    <div class="auth-container">
-        <div class="auth-box">
-            <h2 id="form-title">Welcome Back</h2>
-            <form id="auth-form">
-                <div class="input-group" id="name-group" style="display: none;">
-                    <label for="name">Full Name</label>
-                    <input type="text" id="name" placeholder="Enter your name">
+<body>
+    <div class="glow-bg"></div>
+    
+    <nav class="navbar">
+        <div class="logo">CYBER<span>GEN</span></div>
+        <div class="status-badge"><span class="pulse"></span> SYSTEM ONLINE</div>
+    </nav>
+
+    <main class="auth-container">
+        <div class="auth-card">
+            <div class="tab-header">
+                <button id="tab-login" class="tab-btn active" onclick="switchTab('login')">LOGIN</button>
+                <button id="tab-signup" class="tab-btn" onclick="switchTab('signup')">SIGN UP</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" class="auth-form active" onsubmit="handleAuth(event, 'login')">
+                <div class="input-group">
+                    <label>ACCESS ID / EMAIL</label>
+                    <input type="email" id="login-email" placeholder="runner@cyberpunk.net" required>
                 </div>
                 <div class="input-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" required placeholder="Enter your email">
+                    <label>SECURITY PASSCODE</label>
+                    <input type="password" id="login-pass" placeholder="••••••••" required>
                 </div>
-                <div class="input-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" required placeholder="Enter your password">
-                </div>
-                <button type="submit" id="auth-btn" class="primary-btn">Login</button>
+                <button type="submit" class="cyber-btn">INITIALIZE SESSION</button>
             </form>
-            <p class="switch-text">
-                <span id="switch-msg">Don't have an account?</span> 
-                <a href="#" id="switch-link">Sign Up</a>
-            </p>
+
+            <!-- Signup Form -->
+            <form id="signup-form" class="auth-form" onsubmit="handleAuth(event, 'signup')">
+                <div class="input-group">
+                    <label>CODENAME / USERNAME</label>
+                    <input type="text" id="signup-name" placeholder="Neo_Vip" required>
+                </div>
+                <div class="input-group">
+                    <label>NET ID / EMAIL</label>
+                    <input type="email" id="signup-email" placeholder="runner@cyberpunk.net" required>
+                </div>
+                <div class="input-group">
+                    <label>CREATE PASSCODE</label>
+                    <input type="password" id="signup-pass" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="cyber-btn pink">CREATE IDENTITY</button>
+            </form>
         </div>
-    </div>
+    </main>
+
     <script src="script.js"></script>
 </body>
 </html>
