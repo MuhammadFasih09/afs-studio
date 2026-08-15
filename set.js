@@ -48,7 +48,7 @@ function logout() {
     window.location.href = 'index.html';
 }
 
-// 4. Update Profile Credentials & Password (ENHANCED LOGIN-SYNC FIX)
+// 4. Update Profile Credentials & Password (EXACT MATCHING FIX)
 function saveProfile(event) {
     if (event) event.preventDefault();
 
@@ -60,8 +60,13 @@ function saveProfile(event) {
 
     const newUsernameInput = document.getElementById('set-username')?.value.trim();
     const newEmailInput = document.getElementById('set-email')?.value.trim();
-    const newPassword = document.getElementById('set-password')?.value.trim();
-    const confirmPassword = document.getElementById('set-confirm-password')?.value.trim();
+    
+    // FIX: HTML ID 'set-pass' key matching check
+    const passInput = document.getElementById('set-pass') || document.getElementById('set-password');
+    const confirmPassInput = document.getElementById('set-confirm-password');
+
+    const newPassword = passInput?.value.trim();
+    const confirmPassword = confirmPassInput ? confirmPassInput.value.trim() : newPassword;
 
     if (!newUsernameInput || !newEmailInput) {
         alert('Username aur Email required hain!');
@@ -70,8 +75,8 @@ function saveProfile(event) {
 
     // Password Validation Check
     let updatePassword = false;
-    if (newPassword || confirmPassword) {
-        if (newPassword !== confirmPassword) {
+    if (newPassword) {
+        if (confirmPassInput && newPassword !== confirmPassword) {
             alert('New Password aur Confirm Password match nahi kar rahay!');
             return;
         }
@@ -85,7 +90,7 @@ function saveProfile(event) {
     // Determine target password
     const finalPassword = updatePassword ? newPassword : (session.password || '');
 
-    // 1. Update Session Object
+    // 1. Update Session Object ('cyber_user')
     session.username = newUsernameInput;
     session.email = newEmailInput;
     if (updatePassword) {
@@ -96,7 +101,7 @@ function saveProfile(event) {
     // 2. Update Global Registered Users Array ('cyber_users')
     let allUsers = JSON.parse(localStorage.getItem('cyber_users')) || [];
 
-    // Look for matching user in allUsers database
+    // Find user entry in database
     let userIndex = allUsers.findIndex(u => {
         const uEmail = (u.email || '').toLowerCase().trim();
         const uUser = (u.username || u.name || '').toLowerCase().trim();
@@ -107,12 +112,14 @@ function saveProfile(event) {
     });
 
     if (userIndex !== -1) {
-        // Existing user updated
+        // Update existing user credentials
         allUsers[userIndex].username = newUsernameInput;
         allUsers[userIndex].email = newEmailInput;
-        allUsers[userIndex].password = finalPassword;
+        if (updatePassword) {
+            allUsers[userIndex].password = finalPassword;
+        }
     } else {
-        // If not found in database, push new account
+        // Add new record if not existing in array
         allUsers.push({
             username: newUsernameInput,
             email: newEmailInput,
@@ -120,15 +127,16 @@ function saveProfile(event) {
         });
     }
 
-    // Save updated users list back to localStorage
+    // Save synced database back to localStorage
     localStorage.setItem('cyber_users', JSON.stringify(allUsers));
 
-    // Clear Password Inputs
-    if (document.getElementById('set-password')) document.getElementById('set-password').value = '';
-    if (document.getElementById('set-confirm-password')) document.getElementById('set-confirm-password').value = '';
+    // Reset password field
+    if (passInput) passInput.value = '';
+    if (confirmPassInput) confirmPassInput.value = '';
 
-    alert('Profile & Password successfully update ho gaya hai! Ab aap naye password se login kar sakte hain.');
+    alert('Profile & Password successfully update ho gaya hai! Ab naye credentials se login ho jayega.');
 }
+
 // 5. Theme Switcher (Syncs with Image Generator Page)
 function setTheme(theme, btnElement) {
     document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
