@@ -3,73 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CYBERGEN // AI Studio</title>
+    <title>CYBERGEN // System Settings</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="gen.css">
+    <link rel="stylesheet" href="set.css">
 </head>
-<body>
+<body id="app-body">
     <div class="glow-bg"></div>
 
     <nav class="navbar">
         <div class="logo">CYBER<span>GEN</span></div>
         <div class="nav-right">
-            <span id="user-display" class="user-tag">RUNNER: ANONYMOUS</span>
-            <a href="set.html" class="nav-btn-icon" title="System Settings">⚙️ SETTINGS</a>
+            <a href="gen.html" class="nav-btn-icon">⬅️ BACK TO STUDIO</a>
             <button class="logout-btn" onclick="logout()">EXIT</button>
         </div>
     </nav>
 
-    <main class="studio-container">
-        <!-- Control Panel -->
-        <section class="prompt-section">
-            <div class="section-title">
-                <h2>IMAGE GENERATOR CORE</h2>
-                <p>Enter parameters to render neural visual outputs.</p>
-            </div>
+    <main class="settings-container">
+        <div class="settings-header">
+            <h2>SYSTEM CONFIGURATION</h2>
+            <p>Manage your identity, visual rendering quality, theme preferences, and neural history logs.</p>
+        </div>
 
-            <div class="prompt-box">
-                <textarea id="prompt-input" placeholder="A futuristic cyberpunk street with neon signs, rain reflections, anime style..." rows="3"></textarea>
-                <button id="generate-btn" class="cyber-btn" onclick="generateImage()">
-                    <span id="btn-text">GENERATE IMAGE</span>
-                    <div id="btn-spinner" class="spinner hidden"></div>
-                </button>
-            </div>
+        <div class="settings-grid">
+            <!-- Account & Security -->
+            <section class="settings-card">
+                <h3>👤 USER IDENTITY & SECURITY</h3>
+                <form id="profile-form" onsubmit="saveProfile(event)">
+                    <div class="input-group">
+                        <label>CODENAME / USERNAME</label>
+                        <input type="text" id="set-username" required>
+                    </div>
+                    <div class="input-group">
+                        <label>NET ID / EMAIL</label>
+                        <input type="email" id="set-email" required>
+                    </div>
+                    <div class="input-group">
+                        <label>NEW PASSCODE</label>
+                        <input type="password" id="set-pass" placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="cyber-btn">UPDATE CREDENTIALS</button>
+                </form>
+            </section>
 
-            <div class="ratio-selector">
-                <label>ASPECT RATIO:</label>
-                <div class="ratio-options">
-                    <button class="ratio-btn active" data-ratio="1:1" onclick="setRatio('1:1', this)">1:1 Square</button>
-                    <button class="ratio-btn" data-ratio="16:9" onclick="setRatio('16:9', this)">16:9 Landscape</button>
-                    <button class="ratio-btn" data-ratio="9:16" onclick="setRatio('9:16', this)">9:16 Portrait</button>
+            <!-- Preferences -->
+            <section class="settings-card">
+                <h3>🎨 RENDER & THEME ENGINE</h3>
+                <div class="setting-item">
+                    <label>IMAGE RENDER QUALITY</label>
+                    <select id="set-quality" onchange="savePreferences()">
+                        <option value="standard">Standard (Fast Render)</option>
+                        <option value="high">Ultra High-Res (AI Enhanced)</option>
+                    </select>
                 </div>
-            </div>
-        </section>
 
-        <!-- Preview Display -->
-        <section class="display-section">
-            <div class="image-frame" id="image-frame">
-                <div id="placeholder" class="placeholder-text">
-                    <span class="icon">🖼️</span>
-                    <p>SYSTEM IDLE // AWAITING PROMPT INPUT</p>
+                <div class="setting-item">
+                    <label>SYSTEM THEME</label>
+                    <div class="theme-options">
+                        <button class="theme-btn active" data-theme="cyberpunk" onclick="setTheme('cyberpunk', this)">Cyberpunk Neon</button>
+                        <button class="theme-btn" data-theme="dark" onclick="setTheme('dark', this)">Midnight Dark</button>
+                    </div>
                 </div>
-                <img id="output-image" src="" alt="Generated Visual" class="hidden">
-            </div>
+            </section>
 
-            <div id="action-bar" class="action-bar hidden">
-                <button class="action-btn" onclick="downloadImage()">💾 DOWNLOAD</button>
-                <button class="action-btn" onclick="openFullImage()">🔍 FULL VIEW</button>
-            </div>
-        </section>
-
-        <!-- Quick Local History Preview -->
-        <section class="history-preview">
-            <h3>RECENT RENDERS</h3>
-            <div id="history-grid" class="history-grid">
-                <!-- Dynamic Items -->
-            </div>
-        </section>
+            <!-- History Logs -->
+            <section class="settings-card full-width">
+                <div class="card-header-flex">
+                    <h3>📜 NEURAL LOGS (GENERATION HISTORY)</h3>
+                    <button class="danger-btn" onclick="clearHistory()">CLEAR ALL LOGS</button>
+                </div>
+                <div id="settings-history-grid" class="settings-history-grid">
+                    <!-- Dynamic History Items -->
+                </div>
+            </section>
+        </div>
     </main>
 
-    <script src="gen.js"></script>
+    <script src="set.js"></script>
 </body>
 </html>
