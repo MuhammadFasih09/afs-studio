@@ -9,6 +9,20 @@
     --neon-cyan: #06b6d4;
     --text-main: #f3f4f6;
     --text-muted: #9ca3af;
+    --input-bg: rgba(8, 7, 17, 0.9);
+}
+
+/* LIGHT THEME OVERRIDES */
+body.theme-light {
+    --bg-dark: #f0f2f5;
+    --card-bg: #ffffff;
+    --border-glow: #cbd5e1;
+    --neon-purple: #9333ea;
+    --neon-pink: #db2777;
+    --neon-cyan: #0284c7;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --input-bg: #f8fafc;
 }
 
 * {
@@ -24,6 +38,7 @@ body {
     min-height: 100vh;
     overflow-x: hidden;
     position: relative;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .glow-bg {
@@ -38,37 +53,27 @@ body {
     z-index: 0;
 }
 
-/* AUTHENTICATION UI */
-.auth-wrapper {
+/* NAVBAR COMPONENTS */
+.navbar {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
-    min-height: 100vh;
-    padding: 20px;
-    position: relative;
-    z-index: 1;
+    padding: 16px 24px;
+    background: rgba(10, 9, 20, 0.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-glow);
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
-.auth-card {
-    background: var(--card-bg);
-    border: 1px solid var(--border-glow);
-    border-radius: 16px;
-    padding: 32px 24px;
-    width: 100%;
-    max-width: 420px;
-    box-shadow: 0 0 30px rgba(168, 85, 247, 0.15);
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.auth-header {
-    text-align: center;
+body.theme-light .navbar {
+    background: rgba(255, 255, 255, 0.85);
 }
 
 .logo {
     font-family: 'Orbitron', sans-serif;
-    font-size: 26px;
+    font-size: 24px;
     font-weight: 900;
     color: var(--text-main);
     letter-spacing: 2px;
@@ -79,74 +84,29 @@ body {
     text-shadow: 0 0 10px rgba(168, 85, 247, 0.6);
 }
 
-.auth-tabs {
+.nav-settings-btn {
     display: flex;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    align-items: center;
+    gap: 8px;
+    background: rgba(168, 85, 247, 0.15);
+    border: 1px solid var(--neon-purple);
+    color: var(--text-main);
+    padding: 8px 16px;
     border-radius: 8px;
-    padding: 4px;
-    gap: 4px;
-}
-
-.tab-btn {
-    flex: 1;
-    padding: 10px;
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
     font-family: 'Orbitron', sans-serif;
     font-size: 12px;
     font-weight: 700;
-    cursor: pointer;
-    border-radius: 6px;
+    text-decoration: none;
     transition: all 0.3s ease;
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.3);
 }
 
-.tab-btn.active {
+.nav-settings-btn:hover {
     background: var(--neon-purple);
     color: #fff;
-    box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.6);
 }
 
-.auth-form {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.input-group label {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--neon-cyan);
-    letter-spacing: 1px;
-}
-
-.input-group input {
-    width: 100%;
-    background: rgba(8, 7, 17, 0.9);
-    border: 1px solid var(--border-glow);
-    border-radius: 8px;
-    padding: 12px 14px;
-    color: var(--text-main);
-    font-family: inherit;
-    font-size: 14px;
-    transition: 0.3s ease;
-}
-
-.input-group input:focus {
-    outline: none;
-    border-color: var(--neon-purple);
-    box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
-}
-
-/* GLOBAL CYBER BUTTON */
 .cyber-btn {
     background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
     border: none;
@@ -169,40 +129,3 @@ body {
 }
 
 .hidden { display: none !important; }
-
-/* NAVBAR COMPONENTS */
-.navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 24px;
-    background: rgba(10, 9, 20, 0.8);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--border-glow);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-
-.nav-settings-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(168, 85, 247, 0.12);
-    border: 1px solid var(--neon-purple);
-    color: var(--text-main);
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
-}
-
-.nav-settings-btn:hover {
-    background: var(--neon-purple);
-    color: #fff;
-    box-shadow: 0 0 18px rgba(168, 85, 247, 0.5);
-}
