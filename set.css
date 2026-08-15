@@ -10,14 +10,34 @@
 
 .settings-header h2 {
     font-family: 'Orbitron', sans-serif;
-    font-size: 24px;
+    font-size: 26px;
+    font-weight: 900;
     color: var(--text-main);
-    letter-spacing: 1px;
+    letter-spacing: 2px;
 }
 
-.settings-header p {
-    font-size: 14px;
-    color: var(--text-muted);
+/* CYBERPUNK BACK BUTTON */
+.cyber-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(6, 182, 212, 0.1);
+    border: 1px solid var(--neon-cyan);
+    color: var(--neon-cyan);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
+}
+
+.cyber-back-btn:hover {
+    background: var(--neon-cyan);
+    color: #000;
+    box-shadow: 0 0 18px rgba(6, 182, 212, 0.5);
 }
 
 .accordion-group {
@@ -41,7 +61,7 @@
     border: none;
     color: var(--neon-cyan);
     font-family: 'Orbitron', sans-serif;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
     letter-spacing: 1px;
     display: flex;
@@ -72,12 +92,6 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-8px); }
-    to { opacity: 1; transform: translateY(0); }
 }
 
 .panel-desc {
@@ -85,7 +99,7 @@
     color: var(--text-muted);
 }
 
-/* Theme Options Buttons */
+/* Theme Options */
 .theme-options {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -110,7 +124,7 @@
     box-shadow: 0 0 15px rgba(168, 85, 247, 0.3);
 }
 
-/* Quality Selection Option Buttons */
+/* Quality Selection Options */
 .quality-options {
     display: flex;
     flex-direction: column;
@@ -226,14 +240,28 @@
     text-align: center;
 }
 
-.hidden { display: none !important; }
+/* BOTTOM LOGOUT BUTTON */
+.settings-logout-wrapper {
+    margin-top: 12px;
+}
 
-/* Dark Theme Override */
-body.theme-dark {
-    --bg-dark: #050508;
-    --card-bg: #0d0c14;
-    --border-glow: #242238;
-    --neon-purple: #818cf8;
-    --neon-pink: #f472b6;
-    --neon-cyan: #38bdf8;
+.logout-full-btn {
+    width: 100%;
+    padding: 16px;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    color: #fca5a5;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.logout-full-btn:hover {
+    background: rgba(239, 68, 68, 0.3);
+    color: #fff;
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
 }
