@@ -1,27 +1,37 @@
 /* ==========================================================================
-   AFS IMG GEN // GEN.JS (Image Generation & Multi-Tier Fallback Engine)
-   Link this file ONLY in gen.html: <script src="gen.js"></script>
+   AFS STUDIO // GEN.JS
+   Connected to ONLY: gen.html
    ========================================================================== */
 
-// 1. Session Protection Check (Agar user logged in nahi hai toh index.html bhej do)
-window.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Auth Protection Check
     const session = JSON.parse(localStorage.getItem('cyber_user'));
     if (!session || !session.isLoggedIn) {
         window.location.href = 'index.html';
         return;
     }
 
-    // Saved Theme Apply
+    // 2. Load Theme
     const settings = JSON.parse(localStorage.getItem('cyber_settings')) || {};
     if (settings.theme === 'light') {
         document.body.classList.add('theme-light');
     }
 
-    // Load History on Page Load
+    // 3. Attach Submit Listeners
+    const genForm = document.getElementById('gen-form');
+    const genBtn = document.getElementById('generate-btn');
+
+    if (genForm) {
+        genForm.addEventListener('submit', handlePromptSubmit);
+    } else if (genBtn) {
+        genBtn.addEventListener('click', handlePromptSubmit);
+    }
+
+    // 4. Render History
     renderHistory();
 });
 
-// Helper to get saved API Keys from set.html (via localStorage)
+// Retrieve API Keys Saved from set.html via LocalStorage
 function getApiKeys() {
     const settings = JSON.parse(localStorage.getItem('cyber_settings')) || {};
     return {
@@ -31,17 +41,34 @@ function getApiKeys() {
     };
 }
 
-// 1. TIER 1: HUGGING FACE
-async function generateViaHuggingFace(prompt, apiKey) {
+// Aspect Ratio to Exact Width and Height Pixel Mapper
+function getDimensionsFromRatio(ratioStr) {
+    switch (ratioStr) {
+        case '16:9': return { width: 1280, height: 720 };
+        case '9:16': return { width: 720, height: 1280 };
+        case '4:3':  return { width: 1024, height: 768 };
+        case '3:4':  return { width: 768, height: 1024 };
+        case '1:1':
+        default:     return { width: 1024, height: 1024 };
+    }
+}
+
+/* API FALLBACK TIERS */
+
+// Tier 1: Hugging Face FLUX.1
+async function generateViaHuggingFace(prompt, apiKey, width, height) {
     if (!apiKey) throw new Error("Hugging Face API key missing");
-    
+
     const response = await fetch("https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-dev", {
-        headers: { 
+        headers: {
             "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json" 
+            "Content-Type": "application/json"
         },
         method: "POST",
-        body: JSON.stringify({ inputs: prompt }),
+        body: JSON.stringify({ 
+            inputs: prompt,
+            parameters: { width: width, height: height }
+        }),
     });
 
     if (!response.ok) throw new Error(`HF Error: ${response.status}`);
@@ -49,11 +76,15 @@ async function generateViaHuggingFace(prompt, apiKey) {
     return URL.createObjectURL(blob);
 }
 
-// 2. TIER 2: PRODIA API
-async function generateViaProdia(prompt, apiKey) {
+// Tier 2: Prodia API
+async function generateViaProdia(prompt, apiKey, ratio) {
     if (!apiKey) throw new Error("Prodia API key missing");
 
-    const createRes = await fetch(`https://api.prodia.com/v1/sd/generate?prompt=${encodeURIComponent(prompt)}`, {
+    let prodiaRatio = 'square';
+    if (ratio === '16:9') prodiaRatio = 'landscape';
+    if (ratio === '9:16') prodiaRatio = 'portrait';
+
+    const createRes = await fetch(`https://api.prodia.com/v1/sd/generate?prompt=${encodeURIComponent(prompt)}&aspect_ratio=${prodiaRatio}`, {
         method: 'GET',
         headers: {
             'X-Prodia-Key': apiKey,
@@ -71,7 +102,7 @@ async function generateViaProdia(prompt, apiKey) {
             headers: { 'X-Prodia-Key': apiKey }
         });
         const statusData = await statusRes.json();
-        
+
         if (statusData.status === 'succeeded') {
             return statusData.imageUrl;
         } else if (statusData.status === 'failed') {
@@ -81,8 +112,8 @@ async function generateViaProdia(prompt, apiKey) {
     throw new Error("Prodia Timeout");
 }
 
-// 3. TIER 3: STABLE DIFFUSION
-async function generateViaStableDiffusion(prompt, apiKey) {
+// Tier 3: Stable Diffusion XL
+async function generateViaStableDiffusion(prompt, apiKey, width, height) {
     if (!apiKey) throw new Error("Stable Diffusion API key missing");
 
     const response = await fetch("https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image", {
@@ -95,98 +126,121 @@ async function generateViaStableDiffusion(prompt, apiKey) {
         body: JSON.stringify({
             text_prompts: [{ text: prompt }],
             cfg_scale: 7,
-            height: 1024,
-            width: 1024,
+            height: height,
+            width: width,
             steps: 30,
             samples: 1,
         }),
     });
 
-    if (!response.ok) throw new Error(`Stable Diffusion Error: ${response.status}`);
+    if (!response.ok) throw new Error(`SD Error: ${response.status}`);
     const data = await response.json();
     return `data:image/png;base64,${data.artifacts[0].base64}`;
 }
 
-// 4. TIER 4: POLLINATIONS AI (FALLBACK SAFETY NET - 100% FREE)
-async function generateViaPollinations(prompt) {
+// Tier 4: Pollinations AI (100% Free Always-Working Fallback)
+async function generateViaPollinations(prompt, width, height) {
     const seed = Math.floor(Math.random() * 1000000);
     const encodedPrompt = encodeURIComponent(prompt);
-    const imageUrl = `https://pollinations.ai/p/${encodedPrompt}?width=1024&height=1024&seed=${seed}&model=flux&nologo=true`;
-    
+    const imageUrl = `https://pollinations.ai/p/${encodedPrompt}?width=${width}&height=${height}&seed=${seed}&model=flux&nologo=true`;
+
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => resolve(imageUrl);
-        img.onerror = () => reject(new Error("Pollinations loading failed"));
+        img.onerror = () => reject(new Error("Pollinations failed to load"));
         img.src = imageUrl;
     });
 }
 
-// MAIN GENERATION CONTROLLER
-async function generateImage(prompt) {
+// Central Generation Controller
+async function generateImage(prompt, ratioStr) {
     const statusBox = document.getElementById('generation-status');
     const { hfKey, prodiaKey, sdKey } = getApiKeys();
+    const { width, height } = getDimensionsFromRatio(ratioStr);
 
     function updateStatus(msg) {
         if (statusBox) statusBox.innerText = msg;
-        console.log(`[FALLBACK ENGINE]: ${msg}`);
+        console.log(`[GENERATION ENGINE]: ${msg}`);
     }
 
-    // Try Tier 1
+    // Attempt Tier 1
     try {
-        updateStatus("Attempting Hugging Face API...");
-        return await generateViaHuggingFace(prompt, hfKey);
+        updateStatus("Generating via Hugging Face API...");
+        return await generateViaHuggingFace(prompt, hfKey, width, height);
     } catch (err) { console.warn("HF Failed:", err.message); }
 
-    // Try Tier 2
+    // Attempt Tier 2
     try {
-        updateStatus("Attempting Prodia API...");
-        return await generateViaProdia(prompt, prodiaKey);
+        updateStatus("Generating via Prodia API...");
+        return await generateViaProdia(prompt, prodiaKey, ratioStr);
     } catch (err) { console.warn("Prodia Failed:", err.message); }
 
-    // Try Tier 3
+    // Attempt Tier 3
     try {
-        updateStatus("Attempting Stable Diffusion...");
-        return await generateViaStableDiffusion(prompt, sdKey);
+        updateStatus("Generating via Stable Diffusion...");
+        return await generateViaStableDiffusion(prompt, sdKey, width, height);
     } catch (err) { console.warn("SD Failed:", err.message); }
 
-    // Try Tier 4 (Guaranteed Fallback)
+    // Attempt Tier 4 (Guaranteed Backup)
     try {
-        updateStatus("Falling back to Pollinations AI...");
-        return await generateViaPollinations(prompt);
+        updateStatus("Generating via Pollinations Engine...");
+        return await generateViaPollinations(prompt, width, height);
     } catch (err) {
-        updateStatus("Generation failed across all endpoints.");
+        updateStatus("Image generation failed across all endpoints.");
         throw err;
     }
 }
 
-// Form Submit Handler for gen.html
+// Main Event Handler
 async function handlePromptSubmit(event) {
     if (event) event.preventDefault();
+
     const promptInput = document.getElementById('prompt-input');
+    const aspectSelect = document.getElementById('aspect-ratio') || document.getElementById('aspect-select');
     const imageOutput = document.getElementById('generated-image-output');
     const generateBtn = document.getElementById('generate-btn');
+    const statusBox = document.getElementById('generation-status');
+
+    if (!promptInput) return;
 
     const prompt = promptInput.value.trim();
-    if (!prompt) return;
+    const ratioStr = aspectSelect ? aspectSelect.value : '1:1';
+
+    if (!prompt) {
+        alert("Please enter a prompt!");
+        return;
+    }
 
     try {
-        if (generateBtn) generateBtn.disabled = true;
-        
-        const finalUrl = await generateImage(prompt);
-        if (imageOutput) imageOutput.src = finalUrl;
+        if (generateBtn) {
+            generateBtn.disabled = true;
+            generateBtn.innerText = 'Generating...';
+        }
 
-        saveToHistory(prompt, finalUrl);
+        const finalUrl = await generateImage(prompt, ratioStr);
+
+        if (imageOutput) {
+            imageOutput.src = finalUrl;
+            imageOutput.style.display = 'block';
+        }
+
+        if (statusBox) statusBox.innerText = "Image generated successfully!";
+        saveToHistory(prompt, finalUrl, ratioStr);
         renderHistory();
+
     } catch (error) {
-        alert("Image generation failed.");
+        alert("Image generation failed. Please try again.");
     } finally {
-        if (generateBtn) generateBtn.disabled = false;
+        if (generateBtn) {
+            generateBtn.disabled = false;
+            generateBtn.innerText = 'Generate Image';
+        }
     }
 }
 
-function saveToHistory(prompt, url) {
+function saveToHistory(prompt, url, ratio) {
     const history = JSON.parse(localStorage.getItem('cyber_history')) || [];
-    history.unshift({ prompt, url, timestamp: new Date().toISOString() });
+    history.unshift({ prompt, url, ratio, timestamp: new Date().toISOString() });
     localStorage.setItem('cyber_history', JSON.stringify(history.slice(0, 20)));
 }
 
@@ -198,7 +252,7 @@ function renderHistory() {
     historyContainer.innerHTML = history.map(item => `
         <div class="history-card">
             <img src="${item.url}" alt="${item.prompt}">
-            <p>${item.prompt}</p>
+            <p><strong>${item.ratio || '1:1'}</strong> - ${item.prompt}</p>
         </div>
     `).join('');
 }
