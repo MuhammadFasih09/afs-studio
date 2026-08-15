@@ -1,23 +1,23 @@
 /* ==========================================================================
    AFS STUDIO // GEN.JS
-   Connected to ONLY: gen.html
+   Link in gen.html ONLY: <script src="gen.js"></script>
    ========================================================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Auth Protection Check
+    // Session Check
     const session = JSON.parse(localStorage.getItem('cyber_user'));
     if (!session || !session.isLoggedIn) {
         window.location.href = 'index.html';
         return;
     }
 
-    // 2. Load Theme
+    // Apply Theme
     const settings = JSON.parse(localStorage.getItem('cyber_settings')) || {};
     if (settings.theme === 'light') {
         document.body.classList.add('theme-light');
     }
 
-    // 3. Attach Submit Listeners
+    // Attach Event Listeners
     const genForm = document.getElementById('gen-form');
     const genBtn = document.getElementById('generate-btn');
 
@@ -27,11 +27,10 @@ document.addEventListener('DOMContentLoaded', () => {
         genBtn.addEventListener('click', handlePromptSubmit);
     }
 
-    // 4. Render History
     renderHistory();
 });
 
-// Retrieve API Keys Saved from set.html via LocalStorage
+// Retrieve API Keys saved from set.html
 function getApiKeys() {
     const settings = JSON.parse(localStorage.getItem('cyber_settings')) || {};
     return {
@@ -41,7 +40,7 @@ function getApiKeys() {
     };
 }
 
-// Aspect Ratio to Exact Width and Height Pixel Mapper
+// Aspect Ratio Pixel Dimensions Calculator
 function getDimensionsFromRatio(ratioStr) {
     switch (ratioStr) {
         case '16:9': return { width: 1280, height: 720 };
@@ -112,7 +111,7 @@ async function generateViaProdia(prompt, apiKey, ratio) {
     throw new Error("Prodia Timeout");
 }
 
-// Tier 3: Stable Diffusion XL
+// Tier 3: Stable Diffusion
 async function generateViaStableDiffusion(prompt, apiKey, width, height) {
     if (!apiKey) throw new Error("Stable Diffusion API key missing");
 
@@ -138,7 +137,7 @@ async function generateViaStableDiffusion(prompt, apiKey, width, height) {
     return `data:image/png;base64,${data.artifacts[0].base64}`;
 }
 
-// Tier 4: Pollinations AI (100% Free Always-Working Fallback)
+// Tier 4: Pollinations AI (100% Free Backup)
 async function generateViaPollinations(prompt, width, height) {
     const seed = Math.floor(Math.random() * 1000000);
     const encodedPrompt = encodeURIComponent(prompt);
@@ -152,7 +151,7 @@ async function generateViaPollinations(prompt, width, height) {
     });
 }
 
-// Central Generation Controller
+// Central Controller
 async function generateImage(prompt, ratioStr) {
     const statusBox = document.getElementById('generation-status');
     const { hfKey, prodiaKey, sdKey } = getApiKeys();
@@ -163,35 +162,31 @@ async function generateImage(prompt, ratioStr) {
         console.log(`[GENERATION ENGINE]: ${msg}`);
     }
 
-    // Attempt Tier 1
     try {
         updateStatus("Generating via Hugging Face API...");
         return await generateViaHuggingFace(prompt, hfKey, width, height);
     } catch (err) { console.warn("HF Failed:", err.message); }
 
-    // Attempt Tier 2
     try {
         updateStatus("Generating via Prodia API...");
         return await generateViaProdia(prompt, prodiaKey, ratioStr);
     } catch (err) { console.warn("Prodia Failed:", err.message); }
 
-    // Attempt Tier 3
     try {
         updateStatus("Generating via Stable Diffusion...");
         return await generateViaStableDiffusion(prompt, sdKey, width, height);
     } catch (err) { console.warn("SD Failed:", err.message); }
 
-    // Attempt Tier 4 (Guaranteed Backup)
     try {
         updateStatus("Generating via Pollinations Engine...");
         return await generateViaPollinations(prompt, width, height);
     } catch (err) {
-        updateStatus("Image generation failed across all endpoints.");
+        updateStatus("Generation failed across all endpoints.");
         throw err;
     }
 }
 
-// Main Event Handler
+// Submit Event Handler
 async function handlePromptSubmit(event) {
     if (event) event.preventDefault();
 
@@ -199,7 +194,6 @@ async function handlePromptSubmit(event) {
     const aspectSelect = document.getElementById('aspect-ratio') || document.getElementById('aspect-select');
     const imageOutput = document.getElementById('generated-image-output');
     const generateBtn = document.getElementById('generate-btn');
-    const statusBox = document.getElementById('generation-status');
 
     if (!promptInput) return;
 
@@ -224,7 +218,6 @@ async function handlePromptSubmit(event) {
             imageOutput.style.display = 'block';
         }
 
-        if (statusBox) statusBox.innerText = "Image generated successfully!";
         saveToHistory(prompt, finalUrl, ratioStr);
         renderHistory();
 
