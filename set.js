@@ -5,14 +5,32 @@ window.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // Populate Current Profile
+    // Populate Current User Details
     document.getElementById('set-username').value = session.username;
     document.getElementById('set-email').value = session.email;
 
-    // Load Settings & History
+    // Load Preferences & Render History
     loadPreferences();
     renderSettingsHistory();
 });
+
+// Toggle Accordion Panels
+function toggleAccordion(panelId) {
+    const panel = document.getElementById(panelId);
+    const parentAccordion = panel.parentElement;
+
+    const isOpen = !panel.classList.contains('hidden');
+
+    // Close all panels
+    document.querySelectorAll('.accordion-panel').forEach(p => p.classList.add('hidden'));
+    document.querySelectorAll('.setting-accordion').forEach(a => a.classList.remove('open'));
+
+    // If it was closed, open it
+    if (!isOpen) {
+        panel.classList.remove('hidden');
+        parentAccordion.classList.add('open');
+    }
+}
 
 function logout() {
     localStorage.removeItem('cyber_user');
@@ -30,23 +48,6 @@ function saveProfile(event) {
     alert('User Profile Credentials Updated Successfully!');
 }
 
-function savePreferences() {
-    const quality = document.getElementById('set-quality').value;
-    const currentSettings = JSON.parse(localStorage.getItem('cyber_settings')) || {};
-    currentSettings.quality = quality;
-    localStorage.setItem('cyber_settings', JSON.stringify(currentSettings));
-}
-
-function loadPreferences() {
-    const settings = JSON.parse(localStorage.getItem('cyber_settings')) || { quality: 'standard', theme: 'cyberpunk' };
-    document.getElementById('set-quality').value = settings.quality || 'standard';
-    
-    if (settings.theme) {
-        const themeBtn = document.querySelector(`.theme-btn[data-theme="${settings.theme}"]`);
-        if (themeBtn) setTheme(settings.theme, themeBtn);
-    }
-}
-
 function setTheme(theme, btnElement) {
     document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
     btnElement.classList.add('active');
@@ -62,12 +63,38 @@ function setTheme(theme, btnElement) {
     localStorage.setItem('cyber_settings', JSON.stringify(currentSettings));
 }
 
+function setQuality(quality, btnElement) {
+    document.querySelectorAll('.quality-btn').forEach(btn => btn.classList.remove('active'));
+    btnElement.classList.add('active');
+
+    const currentSettings = JSON.parse(localStorage.getItem('cyber_settings')) || {};
+    currentSettings.quality = quality;
+    localStorage.setItem('cyber_settings', JSON.stringify(currentSettings));
+}
+
+function loadPreferences() {
+    const settings = JSON.parse(localStorage.getItem('cyber_settings')) || { quality: 'standard', theme: 'cyberpunk' };
+
+    // Apply Quality State
+    const qualityBtn = document.querySelector(`.quality-btn[data-quality="${settings.quality}"]`);
+    if (qualityBtn) {
+        document.querySelectorAll('.quality-btn').forEach(btn => btn.classList.remove('active'));
+        qualityBtn.classList.add('active');
+    }
+
+    // Apply Theme State
+    if (settings.theme) {
+        const themeBtn = document.querySelector(`.theme-btn[data-theme="${settings.theme}"]`);
+        if (themeBtn) setTheme(settings.theme, themeBtn);
+    }
+}
+
 function renderSettingsHistory() {
     const grid = document.getElementById('settings-history-grid');
     const history = JSON.parse(localStorage.getItem('cyber_history')) || [];
 
     if (history.length === 0) {
-        grid.innerHTML = '<p style="color:var(--text-muted); font-size:13px;">No render logs found.</p>';
+        grid.innerHTML = '<p style="color:var(--text-muted); font-size:12px; grid-column:1/-1;">No render logs found.</p>';
         return;
     }
 
