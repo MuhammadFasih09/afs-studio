@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - AI Text to Image</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo">Settings Panel</div>
+        <a href="gen.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</a>
+    </header>
+
+    <div class="settings-container">
+        <!-- Sidebar / Top Navigation -->
+        <aside class="settings-sidebar">
+            <ul>
+                <li class="tab-btn active" data-target="edit-profile"><i class="fa-solid fa-user-pen"></i> Profile</li>
+                <li class="tab-btn" data-target="history"><i class="fa-solid fa-clock-rotate-left"></i> History</li>
+                <li class="tab-btn" data-target="theme"><i class="fa-solid fa-palette"></i> Theme</li>
+                <li class="tab-btn" data-target="resolution"><i class="fa-solid fa-expand"></i> Quality</li>
+                <li class="tab-btn logout" data-target="logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</li>
+            </ul>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="settings-content">
+            <!-- Edit Profile Section -->
+            <div class="content-section active" id="edit-profile">
+                <h2>Edit Profile</h2>
+                <form id="profile-form">
+                    <div class="input-group">
+                        <label for="profile-name">Name</label>
+                        <input type="text" id="profile-name" placeholder="Enter your full name" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="profile-email">Email</label>
+                        <input type="email" id="profile-email" placeholder="Enter your email" required>
+                    </div>
+                    <button type="submit" class="save-btn">Update Profile</button>
+                </form>
+            </div>
+
+            <!-- History Section -->
+            <div class="content-section" id="history">
+                <h2>Generated History</h2>
+                <div class="history-grid" id="history-grid"></div>
+            </div>
+
+            <!-- Theme Section -->
+            <div class="content-section" id="theme">
+                <h2>Appearance Theme</h2>
+                <p>Select your preferred visual theme.</p>
+                <div class="theme-options">
+                    <button class="theme-btn" id="dark-theme-btn">Dark Theme</button>
+                    <button class="theme-btn" id="light-theme-btn">Light Theme</button>
+                </div>
+            </div>
+
+            <!-- Quality Section -->
+            <div class="content-section" id="resolution">
+                <h2>Image Quality</h2>
+                <p>Choose your target rendering quality.</p>
+                <div class="theme-options res-options">
+                    <button class="theme-btn res-btn" onclick="fakeRes('360p')">360p SD</button>
+                    <button class="theme-btn res-btn" onclick="fakeRes('720p')">720p HD</button>
+                    <button class="theme-btn res-btn" onclick="fakeRes('1080p')">1080p Full HD</button>
+                    <button class="theme-btn res-btn" onclick="fakeRes('4K')">4K Ultra HD</button>
+                    <button class="theme-btn res-btn" onclick="fakeRes('8K')">8K Cinematic</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="set.js?v=5.0"></script>
+</body>
+</html>
