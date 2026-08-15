@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CYBERGEN // Interactive System Settings</title>
+    <title>AFS IMG GEN // Settings</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="set.css">
 </head>
@@ -11,17 +11,16 @@
     <div class="glow-bg"></div>
 
     <nav class="navbar">
-        <div class="logo">CYBER<span>GEN</span></div>
+        <div class="logo">AFS <span>IMG GEN</span></div>
         <div class="nav-right">
-            <a href="gen.html" class="nav-btn-icon">⬅️ BACK TO STUDIO</a>
-            <button class="logout-btn" onclick="logout()">EXIT</button>
+            <a href="gen.html" class="cyber-back-btn">⬅️ BACK TO STUDIO</a>
         </div>
     </nav>
 
     <main class="settings-container">
+        <!-- SIMPLIFIED SETTINGS HEADER -->
         <div class="settings-header">
-            <h2>SYSTEM CONFIGURATION</h2>
-            <p>Click on any setting module below to open and customize your preferences.</p>
+            <h2>SETTINGS</h2>
         </div>
 
         <div class="accordion-group">
@@ -35,18 +34,18 @@
                 <div id="profile-panel" class="accordion-panel hidden">
                     <form id="profile-form" onsubmit="saveProfile(event)">
                         <div class="input-group">
-                            <label>CODENAME / USERNAME</label>
+                            <label>USERNAME</label>
                             <input type="text" id="set-username" required>
                         </div>
                         <div class="input-group">
-                            <label>NET ID / EMAIL</label>
+                            <label>EMAIL</label>
                             <input type="email" id="set-email" required>
                         </div>
                         <div class="input-group">
-                            <label>SECURITY PASSCODE</label>
+                            <label>NEW PASSWORD</label>
                             <input type="password" id="set-pass" placeholder="••••••••">
                         </div>
-                        <button type="submit" class="cyber-btn">SAVE ACCOUNT CHANGES</button>
+                        <button type="submit" class="cyber-btn">SAVE CHANGES</button>
                     </form>
                 </div>
             </div>
@@ -102,6 +101,11 @@
                         <!-- Dynamic Renders Load Here -->
                     </div>
                 </div>
+            </div>
+
+            <!-- LOGOUT BUTTON AT THE VERY BOTTOM -->
+            <div class="settings-logout-wrapper">
+                <button class="logout-full-btn" onclick="logout()">LOGOUT ACCOUNT</button>
             </div>
 
         </div>
