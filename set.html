@@ -18,7 +18,6 @@
     </nav>
 
     <main class="settings-container">
-        <!-- SIMPLIFIED SETTINGS HEADER -->
         <div class="settings-header">
             <h2>SETTINGS</h2>
         </div>
@@ -43,7 +42,7 @@
                         </div>
                         <div class="input-group">
                             <label>NEW PASSWORD</label>
-                            <input type="password" id="set-pass" placeholder="••••••••">
+                            <input type="password" id="set-pass" placeholder="Enter new password">
                         </div>
                         <button type="submit" class="cyber-btn">SAVE CHANGES</button>
                     </form>
@@ -59,51 +58,55 @@
                 <div id="theme-panel" class="accordion-panel hidden">
                     <p class="panel-desc">Select visual environment mode:</p>
                     <div class="theme-options">
-                        <button class="theme-btn active" data-theme="cyberpunk" onclick="setTheme('cyberpunk', this)">🔮 CYBERPUNK NEON</button>
-                        <button class="theme-btn" data-theme="dark" onclick="setTheme('dark', this)">🌙 MIDNIGHT DARK</button>
+                        <button class="theme-btn active" data-theme="dark" onclick="setTheme('dark', this)">🌙 DARK MODE</button>
+                        <button class="theme-btn" data-theme="light" onclick="setTheme('light', this)">☀️ LIGHT MODE</button>
                     </div>
                 </div>
             </div>
 
-            <!-- 3. RENDER QUALITY SELECTION -->
+            <!-- 3. RENDER QUALITY SELECTION (HD, 2K, 4K) -->
             <div class="setting-accordion">
                 <button class="accordion-btn" onclick="toggleAccordion('quality-panel')">
                     <span>⚡ NEURAL RENDER QUALITY</span>
                     <span class="chevron">▼</span>
                 </button>
                 <div id="quality-panel" class="accordion-panel hidden">
-                    <p class="panel-desc">Choose image generation resolution engine:</p>
+                    <p class="panel-desc">Choose output rendering resolution:</p>
                     <div class="quality-options">
-                        <button class="quality-btn active" data-quality="standard" onclick="setQuality('standard', this)">
-                            <strong>STANDARD QUALITY</strong>
-                            <span>Fast generation • 1024x1024 base resolution</span>
+                        <button class="quality-btn active" data-quality="hd" onclick="setQuality('hd', this)">
+                            <strong>HD QUALITY (1080p)</strong>
+                            <span>Standard resolution generation</span>
                         </button>
-                        <button class="quality-btn" data-quality="high" onclick="setQuality('high', this)">
-                            <strong>ULTRA HIGH-RES (AI ENHANCED)</strong>
-                            <span>Deep detail • AI Upscaled rendering</span>
+                        <button class="quality-btn" data-quality="2k" onclick="setQuality('2k', this)">
+                            <strong>2K RESOLUTION (1440p)</strong>
+                            <span>High detail • Enhanced sharpness</span>
+                        </button>
+                        <button class="quality-btn" data-quality="4k" onclick="setQuality('4k', this)">
+                            <strong>4K ULTRA HD (2160p)</strong>
+                            <span>Maximum clarity & AI upscaling</span>
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- 4. GENERATION HISTORY LOGS -->
+            <!-- 4. HISTORY -->
             <div class="setting-accordion">
                 <button class="accordion-btn" onclick="toggleAccordion('history-panel')">
-                    <span>📜 GENERATION HISTORY LOGS</span>
+                    <span>📜 HISTORY</span>
                     <span class="chevron">▼</span>
                 </button>
                 <div id="history-panel" class="accordion-panel hidden">
                     <div class="card-header-flex">
-                        <p class="panel-desc">Your recent neural generation outputs:</p>
-                        <button class="danger-btn" onclick="clearHistory()">CLEAR ALL LOGS</button>
+                        <p class="panel-desc">Your generation logs:</p>
+                        <button class="danger-btn" onclick="clearHistory()">CLEAR HISTORY</button>
                     </div>
                     <div id="settings-history-grid" class="settings-history-grid">
-                        <!-- Dynamic Renders Load Here -->
+                        <!-- Dynamic History Cards -->
                     </div>
                 </div>
             </div>
 
-            <!-- LOGOUT BUTTON AT THE VERY BOTTOM -->
+            <!-- BOTTOM LOGOUT BUTTON -->
             <div class="settings-logout-wrapper">
                 <button class="logout-full-btn" onclick="logout()">LOGOUT ACCOUNT</button>
             </div>
