@@ -1,15 +1,25 @@
+/* ==========================================================================
+   AFS STUDIO // SET.JS (FULL FIXED VERSION)
+   ========================================================================== */
+
 window.addEventListener('DOMContentLoaded', () => {
+    console.log("[SET.JS] Initializing Settings Script...");
+
+    // 1. Session Protection Check
     const session = JSON.parse(localStorage.getItem('cyber_user'));
     if (!session || !session.isLoggedIn) {
         window.location.href = 'index.html';
         return;
     }
 
-    // Populate Current User Details
-    document.getElementById('set-username').value = session.username;
-    document.getElementById('set-email').value = session.email;
+    // 2. Populate Current User Details Safely
+    const usernameInput = document.getElementById('set-username');
+    const emailInput = document.getElementById('set-email');
+    
+    if (usernameInput) usernameInput.value = session.username || '';
+    if (emailInput) emailInput.value = session.email || '';
 
-    // Load Preferences & Render History
+    // 3. Load Preferences & Render History
     loadPreferences();
     renderSettingsHistory();
 });
@@ -17,8 +27,9 @@ window.addEventListener('DOMContentLoaded', () => {
 // Toggle Accordion Panels
 function toggleAccordion(panelId) {
     const panel = document.getElementById(panelId);
-    const parentAccordion = panel.parentElement;
+    if (!panel) return;
 
+    const parentAccordion = panel.parentElement;
     const isOpen = !panel.classList.contains('hidden');
 
     // Close all panels
@@ -28,7 +39,7 @@ function toggleAccordion(panelId) {
     // If it was closed, open it
     if (!isOpen) {
         panel.classList.remove('hidden');
-        parentAccordion.classList.add('open');
+        if (parentAccordion) parentAccordion.classList.add('open');
     }
 }
 
@@ -37,35 +48,86 @@ function logout() {
     window.location.href = 'index.html';
 }
 
+// 4. Update Profile (Name, Email & Password)
 function saveProfile(event) {
-    event.preventDefault();
+    if (event) event.preventDefault();
+
     const session = JSON.parse(localStorage.getItem('cyber_user')) || {};
     
-    session.username = document.getElementById('set-username').value;
-    session.email = document.getElementById('set-email').value;
+    const newUsername = document.getElementById('set-username')?.value.trim();
+    const newEmail = document.getElementById('set-email')?.value.trim();
+    const newPassword = document.getElementById('set-password')?.value.trim();
+    const confirmPassword = document.getElementById('set-confirm-password')?.value.trim();
 
-    localStorage.setItem('cyber_user', JSON.stringify(session));
-    alert('User Profile Credentials Updated Successfully!');
-}
-
-function setTheme(theme, btnElement) {
-    document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
-    btnElement.classList.add('active');
-
-    if (theme === 'dark') {
-        document.body.classList.add('theme-dark');
-    } else {
-        document.body.classList.remove('theme-dark');
+    if (!newUsername || !newEmail) {
+        alert('Username aur Email field khali nahi ho sakti!');
+        return;
     }
 
+    // Password Validation Check (Agar user naya password daal raha hai)
+    if (newPassword || confirmPassword) {
+        if (newPassword !== confirmPassword) {
+            alert('New Password aur Confirm Password match nahi kar rahay!');
+            return;
+        }
+        if (newPassword.length < 4) {
+            alert('Password kam se kam 4 characters ka hona chahiye!');
+            return;
+        }
+        session.password = newPassword;
+    }
+
+    // Update Current Active Session
+    session.username = newUsername;
+    session.email = newEmail;
+    localStorage.setItem('cyber_user', JSON.stringify(session));
+
+    // Update Registered Users Array in LocalStorage (Agar multiple accounts hain)
+    let allUsers = JSON.parse(localStorage.getItem('cyber_users')) || [];
+    const userIndex = allUsers.findIndex(u => u.email === session.email || u.username === session.username);
+    
+    if (userIndex !== -1) {
+        allUsers[userIndex].username = newUsername;
+        allUsers[userIndex].email = newEmail;
+        if (newPassword) allUsers[userIndex].password = newPassword;
+        localStorage.setItem('cyber_users', JSON.stringify(allUsers));
+    }
+
+    // Clear Password Inputs
+    if (document.getElementById('set-password')) document.getElementById('set-password').value = '';
+    if (document.getElementById('set-confirm-password')) document.getElementById('set-confirm-password').value = '';
+
+    alert('Profile Credentials & Password Updated Successfully!');
+}
+
+// 5. Theme Switcher (Flexible for Dark / Cyberpunk / Light)
+function setTheme(theme, btnElement) {
+    // Active class update
+    document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+    
+    // Auto detect button if not passed directly
+    const targetBtn = btnElement || document.querySelector(`.theme-btn[data-theme="${theme}"]`);
+    if (targetBtn) targetBtn.classList.add('active');
+
+    // Clean previous theme classes from body
+    document.body.classList.remove('theme-dark', 'theme-light', 'theme-cyberpunk');
+    
+    // Apply selected theme class
+    document.body.classList.add(`theme-${theme}`);
+
+    // Save Preference Globally
     const currentSettings = JSON.parse(localStorage.getItem('cyber_settings')) || {};
     currentSettings.theme = theme;
     localStorage.setItem('cyber_settings', JSON.stringify(currentSettings));
+    
+    console.log(`[SET.JS] Theme applied: theme-${theme}`);
 }
 
 function setQuality(quality, btnElement) {
     document.querySelectorAll('.quality-btn').forEach(btn => btn.classList.remove('active'));
-    btnElement.classList.add('active');
+    
+    const targetBtn = btnElement || document.querySelector(`.quality-btn[data-quality="${quality}"]`);
+    if (targetBtn) targetBtn.classList.add('active');
 
     const currentSettings = JSON.parse(localStorage.getItem('cyber_settings')) || {};
     currentSettings.quality = quality;
@@ -77,24 +139,24 @@ function loadPreferences() {
 
     // Apply Quality State
     const qualityBtn = document.querySelector(`.quality-btn[data-quality="${settings.quality}"]`);
-    if (qualityBtn) {
-        document.querySelectorAll('.quality-btn').forEach(btn => btn.classList.remove('active'));
-        qualityBtn.classList.add('active');
-    }
+    if (qualityBtn) setQuality(settings.quality, qualityBtn);
 
     // Apply Theme State
     if (settings.theme) {
         const themeBtn = document.querySelector(`.theme-btn[data-theme="${settings.theme}"]`);
-        if (themeBtn) setTheme(settings.theme, themeBtn);
+        setTheme(settings.theme, themeBtn);
     }
 }
 
+// 6. History Logs Section
 function renderSettingsHistory() {
     const grid = document.getElementById('settings-history-grid');
+    if (!grid) return;
+
     const history = JSON.parse(localStorage.getItem('cyber_history')) || [];
 
     if (history.length === 0) {
-        grid.innerHTML = '<p style="color:var(--text-muted); font-size:12px; grid-column:1/-1;">No render logs found.</p>';
+        grid.innerHTML = '<p style="color:var(--text-muted, #888); font-size:12px; grid-column:1/-1;">No render logs found.</p>';
         return;
     }
 
