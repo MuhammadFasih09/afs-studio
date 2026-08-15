@@ -1,5 +1,5 @@
 /* ==========================================================================
-   AFS STUDIO // SET.JS (FULL SYNCED VERSION)
+   AFS STUDIO // SET.JS (FULL SYNCED & FIXED VERSION)
    ========================================================================== */
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -48,12 +48,16 @@ function logout() {
     window.location.href = 'index.html';
 }
 
-// 4. Update Profile Credentials & Password
+// 4. Update Profile Credentials & Password (FIXED SYNC LOGIC)
 function saveProfile(event) {
     if (event) event.preventDefault();
 
     const session = JSON.parse(localStorage.getItem('cyber_user')) || {};
     
+    // Original values to identify user in global database
+    const oldEmail = session.email;
+    const oldUsername = session.username;
+
     const newUsername = document.getElementById('set-username')?.value.trim();
     const newEmail = document.getElementById('set-email')?.value.trim();
     const newPassword = document.getElementById('set-password')?.value.trim();
@@ -77,46 +81,57 @@ function saveProfile(event) {
         session.password = newPassword;
     }
 
-    const oldEmail = session.email;
-
-    // Update Session
+    // Update Session Object
     session.username = newUsername;
     session.email = newEmail;
     localStorage.setItem('cyber_user', JSON.stringify(session));
 
-    // Update Global Registered Users Array
+    // Update Global Registered Users Array ('cyber_users')
     let allUsers = JSON.parse(localStorage.getItem('cyber_users')) || [];
-    const userIndex = allUsers.findIndex(u => u.email === oldEmail || u.username === session.username);
     
+    // Find user by oldEmail, newEmail, oldUsername or newUsername
+    let userIndex = allUsers.findIndex(u => 
+        (oldEmail && u.email === oldEmail) || 
+        (oldUsername && u.username === oldUsername) || 
+        u.email === newEmail || 
+        u.username === newUsername
+    );
+
     if (userIndex !== -1) {
         allUsers[userIndex].username = newUsername;
         allUsers[userIndex].email = newEmail;
-        if (newPassword) allUsers[userIndex].password = newPassword;
-        localStorage.setItem('cyber_users', JSON.stringify(allUsers));
+        if (newPassword) {
+            allUsers[userIndex].password = newPassword;
+        }
+    } else {
+        // Agar user list mein exist na kare toh add kar dein
+        allUsers.push({
+            username: newUsername,
+            email: newEmail,
+            password: newPassword || session.password
+        });
     }
+
+    // Save updated array back to localStorage
+    localStorage.setItem('cyber_users', JSON.stringify(allUsers));
 
     // Clear Password Inputs
     if (document.getElementById('set-password')) document.getElementById('set-password').value = '';
     if (document.getElementById('set-confirm-password')) document.getElementById('set-confirm-password').value = '';
 
-    alert('Profile & Password successfully update ho gaya hai!');
+    alert('Profile & Password successfully update ho gaya hai! Ab aap naye password se login kar sakte hain.');
 }
 
 // 5. Theme Switcher (Syncs with Image Generator Page)
 function setTheme(theme, btnElement) {
-    // Active class update for buttons
     document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
     
     const targetBtn = btnElement || document.querySelector(`.theme-btn[data-theme="${theme}"]`);
     if (targetBtn) targetBtn.classList.add('active');
 
-    // Clean previous theme classes from body
     document.body.classList.remove('theme-dark', 'theme-light', 'theme-cyberpunk');
-    
-    // Apply selected theme class
     document.body.classList.add(`theme-${theme}`);
 
-    // Save Theme Preference globally for generator page
     const currentSettings = JSON.parse(localStorage.getItem('cyber_settings')) || {};
     currentSettings.theme = theme;
     localStorage.setItem('cyber_settings', JSON.stringify(currentSettings));
@@ -138,11 +153,9 @@ function setQuality(quality, btnElement) {
 function loadPreferences() {
     const settings = JSON.parse(localStorage.getItem('cyber_settings')) || { quality: 'standard', theme: 'cyberpunk' };
 
-    // Apply Quality State
     const qualityBtn = document.querySelector(`.quality-btn[data-quality="${settings.quality}"]`);
     if (qualityBtn) setQuality(settings.quality, qualityBtn);
 
-    // Apply Theme State
     if (settings.theme) {
         const themeBtn = document.querySelector(`.theme-btn[data-theme="${settings.theme}"]`);
         setTheme(settings.theme, themeBtn);
