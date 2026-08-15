@@ -9,7 +9,7 @@ let currentImageUrl = '';
 // DIRECT DEFAULT API KEYS (Yahan apni direct keys daalein)
 // ==========================================================================
 const DEFAULT_HF_KEY = "hf_YOUR_HUGGING_FACE_KEY_HERE"; 
-const DEFAULT_SD_KEY = "sk-YOUR_STABILITY_AI_KEY_HERE";
+const DEFAULT_SD_KEY = "sk-9JjCnaLaxCT1HWbWegCKIWC5SDmo2tmU4F4Hyt9arPxsIL3a";
 
 window.addEventListener('DOMContentLoaded', () => {
     console.log("[GEN.JS] Studio initialized successfully.");
