@@ -1,6 +1,9 @@
-let selectedRatio = '1:1';
-let currentImageUrl = '';
+/* ==========================================================================
+   AFS IMG GEN // GEN.JS (Image Generation & Multi-Tier Fallback Engine)
+   Link this file ONLY in gen.html: <script src="gen.js"></script>
+   ========================================================================== */
 
+// 1. Session Protection Check (Agar user logged in nahi hai toh index.html bhej do)
 window.addEventListener('DOMContentLoaded', () => {
     const session = JSON.parse(localStorage.getItem('cyber_user'));
     if (!session || !session.isLoggedIn) {
@@ -8,178 +11,194 @@ window.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // Apply Saved Theme
+    // Saved Theme Apply
     const settings = JSON.parse(localStorage.getItem('cyber_settings')) || {};
     if (settings.theme === 'light') {
         document.body.classList.add('theme-light');
     }
+
+    // Load History on Page Load
+    renderHistory();
 });
 
-function selectRatio(ratio, element) {
-    selectedRatio = ratio;
-    document.querySelectorAll('.ratio-btn').forEach(btn => btn.classList.remove('active'));
-    element.classList.add('active');
-}
-
-// Calculate dimensions based on Ratio & Quality Settings
-function getDimensions() {
-    const settings = JSON.parse(localStorage.getItem('cyber_settings')) || { quality: 'hd' };
-    let multiplier = 1;
-    if (settings.quality === '2k') multiplier = 1.5;
-    if (settings.quality === '4k') multiplier = 2;
-
-    let baseW = 1024, baseH = 1024;
-    if (selectedRatio === '16:9') { baseW = 1280; baseH = 720; }
-    else if (selectedRatio === '9:16') { baseW = 720; baseH = 1280; }
-    else if (selectedRatio === '4:3') { baseW = 1024; baseH = 768; }
-
+// Helper to get saved API Keys from set.html (via localStorage)
+function getApiKeys() {
+    const settings = JSON.parse(localStorage.getItem('cyber_settings')) || {};
     return {
-        width: Math.round(baseW * multiplier),
-        height: Math.round(baseH * multiplier)
+        hfKey: settings.hfKey || '',
+        prodiaKey: settings.prodiaKey || '',
+        sdKey: settings.sdKey || ''
     };
 }
 
-// 1. Hugging Face API Request
-async function fetchHuggingFace(prompt) {
-    const response = await fetch("https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell", {
-        headers: { "Content-Type": "application/json" },
+// 1. TIER 1: HUGGING FACE
+async function generateViaHuggingFace(prompt, apiKey) {
+    if (!apiKey) throw new Error("Hugging Face API key missing");
+    
+    const response = await fetch("https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-dev", {
+        headers: { 
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json" 
+        },
         method: "POST",
         body: JSON.stringify({ inputs: prompt }),
     });
-    if (!response.ok) throw new Error("Hugging Face API Failed");
+
+    if (!response.ok) throw new Error(`HF Error: ${response.status}`);
     const blob = await response.blob();
     return URL.createObjectURL(blob);
 }
 
-// 2. Prodia API Fallback
-async function fetchProdia(prompt, width, height) {
-    const seed = Math.floor(Math.random() * 999999);
-    const url = `https://api.prodia.com/v1/sd/generate?prompt=${encodeURIComponent(prompt)}&width=${width}&height=${height}&seed=${seed}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Prodia API Failed");
-    const data = await res.json();
-    return data.imageUrl;
-}
+// 2. TIER 2: PRODIA API
+async function generateViaProdia(prompt, apiKey) {
+    if (!apiKey) throw new Error("Prodia API key missing");
 
-// 3. Stable Diffusion Fallback
-async function fetchStableDiffusion(prompt, width, height) {
-    const seed = Math.floor(Math.random() * 999999);
-    const url = `https://stablediffusionapi.com/api/v3/text2img`;
-    const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            key: "", // Public Fallback Mode
-            prompt: prompt,
-            width: width.toString(),
-            height: height.toString(),
-            samples: "1"
-        })
+    const createRes = await fetch(`https://api.prodia.com/v1/sd/generate?prompt=${encodeURIComponent(prompt)}`, {
+        method: 'GET',
+        headers: {
+            'X-Prodia-Key': apiKey,
+            'Accept': 'application/json'
+        }
     });
-    if (!res.ok) throw new Error("Stable Diffusion API Failed");
-    const data = await res.json();
-    if (data.output && data.output[0]) return data.output[0];
-    throw new Error("Stable Diffusion No Output");
-}
 
-// 4. Pollinations AI Final Safety Net
-function fetchPollinations(prompt, width, height) {
-    const seed = Math.floor(Math.random() * 999999);
-    return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=${width}&height=${height}&seed=${seed}&nologo=true`;
-}
+    if (!createRes.ok) throw new Error(`Prodia Creation Error: ${createRes.status}`);
+    const jobData = await createRes.json();
+    const jobId = jobData.job;
 
-// MAIN EXECUTION WITH AUTOMATIC API FALLBACK CHAIN
-async function generateImage() {
-    const promptInput = document.getElementById('prompt-input');
-    const prompt = promptInput.value.trim();
-    const displayArea = document.getElementById('image-container');
-    const actionsArea = document.getElementById('output-actions');
-    const genBtn = document.getElementById('generate-btn');
-
-    if (!prompt) {
-        alert('Please enter a prompt first!');
-        return;
-    }
-
-    genBtn.disabled = true;
-    genBtn.innerHTML = '<span>⚡ GENERATING...</span>';
-    displayArea.innerHTML = `
-        <div class="placeholder-content">
-            <div class="cyber-icon">🔮</div>
-            <p>Processing request through Neural API Pipeline...</p>
-        </div>
-    `;
-    actionsArea.classList.add('hidden');
-
-    const dims = getDimensions();
-    let finalImageUrl = "";
-
-    // Sequential Fallback Execution
-    try {
-        console.log("Trying Hugging Face API...");
-        finalImageUrl = await fetchHuggingFace(prompt);
-    } catch (e1) {
-        console.warn("Hugging Face failed. Trying Prodia API...", e1);
-        try {
-            finalImageUrl = await fetchProdia(prompt, dims.width, dims.height);
-        } catch (e2) {
-            console.warn("Prodia failed. Trying Stable Diffusion API...", e2);
-            try {
-                finalImageUrl = await fetchStableDiffusion(prompt, dims.width, dims.height);
-            } catch (e3) {
-                console.warn("Stable Diffusion failed. Falling back to Pollinations AI...", e3);
-                finalImageUrl = fetchPollinations(prompt, dims.width, dims.height);
-            }
+    for (let i = 0; i < 15; i++) {
+        await new Promise(r => setTimeout(r, 2000));
+        const statusRes = await fetch(`https://api.prodia.com/v1/job/${jobId}`, {
+            headers: { 'X-Prodia-Key': apiKey }
+        });
+        const statusData = await statusRes.json();
+        
+        if (statusData.status === 'succeeded') {
+            return statusData.imageUrl;
+        } else if (statusData.status === 'failed') {
+            throw new Error("Prodia Generation Failed");
         }
     }
+    throw new Error("Prodia Timeout");
+}
 
-    // Render Image Result
-    const img = new Image();
-    img.src = finalImageUrl;
-    img.onload = () => {
-        currentImageUrl = finalImageUrl;
-        displayArea.innerHTML = `<img src="${finalImageUrl}" alt="${prompt}">`;
-        actionsArea.classList.remove('hidden');
+// 3. TIER 3: STABLE DIFFUSION
+async function generateViaStableDiffusion(prompt, apiKey) {
+    if (!apiKey) throw new Error("Stable Diffusion API key missing");
 
-        // Immediate Save To History
-        saveToHistory(prompt, finalImageUrl);
+    const response = await fetch("https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+            text_prompts: [{ text: prompt }],
+            cfg_scale: 7,
+            height: 1024,
+            width: 1024,
+            steps: 30,
+            samples: 1,
+        }),
+    });
 
-        genBtn.disabled = false;
-        genBtn.innerHTML = '<span>✨ GENERATE IMAGE</span>';
-    };
+    if (!response.ok) throw new Error(`Stable Diffusion Error: ${response.status}`);
+    const data = await response.json();
+    return `data:image/png;base64,${data.artifacts[0].base64}`;
+}
 
-    img.onerror = () => {
-        // Ultimate fallback to pollinations directly if blob loading fails
-        const fallbackUrl = fetchPollinations(prompt, dims.width, dims.height);
-        currentImageUrl = fallbackUrl;
-        displayArea.innerHTML = `<img src="${fallbackUrl}" alt="${prompt}">`;
-        actionsArea.classList.remove('hidden');
-        saveToHistory(prompt, fallbackUrl);
+// 4. TIER 4: POLLINATIONS AI (FALLBACK SAFETY NET - 100% FREE)
+async function generateViaPollinations(prompt) {
+    const seed = Math.floor(Math.random() * 1000000);
+    const encodedPrompt = encodeURIComponent(prompt);
+    const imageUrl = `https://pollinations.ai/p/${encodedPrompt}?width=1024&height=1024&seed=${seed}&model=flux&nologo=true`;
+    
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(imageUrl);
+        img.onerror = () => reject(new Error("Pollinations loading failed"));
+        img.src = imageUrl;
+    });
+}
 
-        genBtn.disabled = false;
-        genBtn.innerHTML = '<span>✨ GENERATE IMAGE</span>';
-    };
+// MAIN GENERATION CONTROLLER
+async function generateImage(prompt) {
+    const statusBox = document.getElementById('generation-status');
+    const { hfKey, prodiaKey, sdKey } = getApiKeys();
+
+    function updateStatus(msg) {
+        if (statusBox) statusBox.innerText = msg;
+        console.log(`[FALLBACK ENGINE]: ${msg}`);
+    }
+
+    // Try Tier 1
+    try {
+        updateStatus("Attempting Hugging Face API...");
+        return await generateViaHuggingFace(prompt, hfKey);
+    } catch (err) { console.warn("HF Failed:", err.message); }
+
+    // Try Tier 2
+    try {
+        updateStatus("Attempting Prodia API...");
+        return await generateViaProdia(prompt, prodiaKey);
+    } catch (err) { console.warn("Prodia Failed:", err.message); }
+
+    // Try Tier 3
+    try {
+        updateStatus("Attempting Stable Diffusion...");
+        return await generateViaStableDiffusion(prompt, sdKey);
+    } catch (err) { console.warn("SD Failed:", err.message); }
+
+    // Try Tier 4 (Guaranteed Fallback)
+    try {
+        updateStatus("Falling back to Pollinations AI...");
+        return await generateViaPollinations(prompt);
+    } catch (err) {
+        updateStatus("Generation failed across all endpoints.");
+        throw err;
+    }
+}
+
+// Form Submit Handler for gen.html
+async function handlePromptSubmit(event) {
+    if (event) event.preventDefault();
+    const promptInput = document.getElementById('prompt-input');
+    const imageOutput = document.getElementById('generated-image-output');
+    const generateBtn = document.getElementById('generate-btn');
+
+    const prompt = promptInput.value.trim();
+    if (!prompt) return;
+
+    try {
+        if (generateBtn) generateBtn.disabled = true;
+        
+        const finalUrl = await generateImage(prompt);
+        if (imageOutput) imageOutput.src = finalUrl;
+
+        saveToHistory(prompt, finalUrl);
+        renderHistory();
+    } catch (error) {
+        alert("Image generation failed.");
+    } finally {
+        if (generateBtn) generateBtn.disabled = false;
+    }
 }
 
 function saveToHistory(prompt, url) {
-    let history = JSON.parse(localStorage.getItem('cyber_history')) || [];
-    history.unshift({ prompt, url, date: new Date().toLocaleTimeString() });
-    localStorage.setItem('cyber_history', JSON.stringify(history));
+    const history = JSON.parse(localStorage.getItem('cyber_history')) || [];
+    history.unshift({ prompt, url, timestamp: new Date().toISOString() });
+    localStorage.setItem('cyber_history', JSON.stringify(history.slice(0, 20)));
 }
 
-function downloadImage() {
-    if (!currentImageUrl) return;
-    const a = document.createElement('a');
-    a.href = currentImageUrl;
-    a.download = `AFS-IMG-GEN-${Date.now()}.jpg`;
-    a.target = '_blank';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-}
+function renderHistory() {
+    const historyContainer = document.getElementById('history-container');
+    if (!historyContainer) return;
 
-function copyImageLink() {
-    if (!currentImageUrl) return;
-    navigator.clipboard.writeText(currentImageUrl);
-    alert('Image URL copied to clipboard!');
+    const history = JSON.parse(localStorage.getItem('cyber_history')) || [];
+    historyContainer.innerHTML = history.map(item => `
+        <div class="history-card">
+            <img src="${item.url}" alt="${item.prompt}">
+            <p>${item.prompt}</p>
+        </div>
+    `).join('');
 }
