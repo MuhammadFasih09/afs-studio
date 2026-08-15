@@ -3,56 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login / Sign-up Page</title>
+    <title>AFS IMG GEN // Login / Sign-up Page</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body id="app-body">
     <div class="glow-bg"></div>
-    
-    <nav class="navbar">
-        <div class="logo">CYBER<span>GEN</span></div>
-        <div class="status-badge"><span class="pulse"></span> SYSTEM ONLINE</div>
-    </nav>
 
-    <main class="auth-container">
+    <div class="auth-wrapper">
         <div class="auth-card">
-            <div class="tab-header">
-                <button id="tab-login" class="tab-btn active" onclick="switchTab('login')">LOGIN</button>
-                <button id="tab-signup" class="tab-btn" onclick="switchTab('signup')">SIGN UP</button>
+            <!-- BRANDING HEADER -->
+            <div class="auth-header">
+                <h1 class="logo">AFS <span>IMG GEN</span></h1>
             </div>
 
-            <!-- Login Form -->
-            <form id="login-form" class="auth-form active" onsubmit="handleAuth(event, 'login')">
+            <!-- TAB CONTROLS -->
+            <div class="auth-tabs">
+                <button id="login-tab" class="tab-btn active" onclick="switchTab('login')">LOGIN</button>
+                <button id="signup-tab" class="tab-btn" onclick="switchTab('signup')">SIGN UP</button>
+            </div>
+
+            <!-- LOGIN FORM -->
+            <form id="login-form" class="auth-form" onsubmit="handleLogin(event)">
                 <div class="input-group">
-                    <label>ACCESS ID / EMAIL</label>
-                    <input type="email" id="login-email" placeholder="runner@cyberpunk.net" required>
+                    <label for="login-email">EMAIL</label>
+                    <input type="email" id="login-email" placeholder="enter your email..." required>
                 </div>
                 <div class="input-group">
-                    <label>SECURITY PASSCODE</label>
-                    <input type="password" id="login-pass" placeholder="••••••••" required>
+                    <label for="login-password">PASSWORD</label>
+                    <input type="password" id="login-password" placeholder="••••••••" required>
                 </div>
-                <button type="submit" class="cyber-btn">INITIALIZE SESSION</button>
+                <button type="submit" class="cyber-btn">LOGIN</button>
             </form>
 
-            <!-- Signup Form -->
-            <form id="signup-form" class="auth-form" onsubmit="handleAuth(event, 'signup')">
+            <!-- SIGN UP FORM -->
+            <form id="signup-form" class="auth-form hidden" onsubmit="handleSignup(event)">
                 <div class="input-group">
-                    <label>CODENAME / USERNAME</label>
-                    <input type="text" id="signup-name" placeholder="Neo_Vip" required>
+                    <label for="signup-username">USERNAME</label>
+                    <input type="text" id="signup-username" placeholder="choose username..." required>
                 </div>
                 <div class="input-group">
-                    <label>NET ID / EMAIL</label>
-                    <input type="email" id="signup-email" placeholder="runner@cyberpunk.net" required>
+                    <label for="signup-email">EMAIL</label>
+                    <input type="email" id="signup-email" placeholder="enter email address..." required>
                 </div>
                 <div class="input-group">
-                    <label>CREATE PASSCODE</label>
-                    <input type="password" id="signup-pass" placeholder="••••••••" required>
+                    <label for="signup-password">CREATE PASSWORD</label>
+                    <input type="password" id="signup-password" placeholder="••••••••" required>
                 </div>
-                <button type="submit" class="cyber-btn pink">CREATE IDENTITY</button>
+                <button type="submit" class="cyber-btn">CREATE ACCOUNT</button>
             </form>
         </div>
-    </main>
+    </div>
 
-    <script src="script.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
