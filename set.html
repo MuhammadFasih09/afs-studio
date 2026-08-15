@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CYBERGEN // System Settings</title>
+    <title>CYBERGEN // Interactive System Settings</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="set.css">
 </head>
@@ -21,60 +21,89 @@
     <main class="settings-container">
         <div class="settings-header">
             <h2>SYSTEM CONFIGURATION</h2>
-            <p>Manage your identity, visual rendering quality, theme preferences, and neural history logs.</p>
+            <p>Click on any setting module below to open and customize your preferences.</p>
         </div>
 
-        <div class="settings-grid">
-            <!-- Account & Security -->
-            <section class="settings-card">
-                <h3>👤 USER IDENTITY & SECURITY</h3>
-                <form id="profile-form" onsubmit="saveProfile(event)">
-                    <div class="input-group">
-                        <label>CODENAME / USERNAME</label>
-                        <input type="text" id="set-username" required>
-                    </div>
-                    <div class="input-group">
-                        <label>NET ID / EMAIL</label>
-                        <input type="email" id="set-email" required>
-                    </div>
-                    <div class="input-group">
-                        <label>NEW PASSCODE</label>
-                        <input type="password" id="set-pass" placeholder="••••••••">
-                    </div>
-                    <button type="submit" class="cyber-btn">UPDATE CREDENTIALS</button>
-                </form>
-            </section>
+        <div class="accordion-group">
 
-            <!-- Preferences -->
-            <section class="settings-card">
-                <h3>🎨 RENDER & THEME ENGINE</h3>
-                <div class="setting-item">
-                    <label>IMAGE RENDER QUALITY</label>
-                    <select id="set-quality" onchange="savePreferences()">
-                        <option value="standard">Standard (Fast Render)</option>
-                        <option value="high">Ultra High-Res (AI Enhanced)</option>
-                    </select>
+            <!-- 1. USER PROFILE & CREDENTIALS -->
+            <div class="setting-accordion">
+                <button class="accordion-btn" onclick="toggleAccordion('profile-panel')">
+                    <span>👤 USER ACCOUNT CREDENTIALS</span>
+                    <span class="chevron">▼</span>
+                </button>
+                <div id="profile-panel" class="accordion-panel hidden">
+                    <form id="profile-form" onsubmit="saveProfile(event)">
+                        <div class="input-group">
+                            <label>CODENAME / USERNAME</label>
+                            <input type="text" id="set-username" required>
+                        </div>
+                        <div class="input-group">
+                            <label>NET ID / EMAIL</label>
+                            <input type="email" id="set-email" required>
+                        </div>
+                        <div class="input-group">
+                            <label>SECURITY PASSCODE</label>
+                            <input type="password" id="set-pass" placeholder="••••••••">
+                        </div>
+                        <button type="submit" class="cyber-btn">SAVE ACCOUNT CHANGES</button>
+                    </form>
                 </div>
+            </div>
 
-                <div class="setting-item">
-                    <label>SYSTEM THEME</label>
+            <!-- 2. THEME SELECTION -->
+            <div class="setting-accordion">
+                <button class="accordion-btn" onclick="toggleAccordion('theme-panel')">
+                    <span>🎨 SYSTEM THEME SELECTOR</span>
+                    <span class="chevron">▼</span>
+                </button>
+                <div id="theme-panel" class="accordion-panel hidden">
+                    <p class="panel-desc">Select visual environment mode:</p>
                     <div class="theme-options">
-                        <button class="theme-btn active" data-theme="cyberpunk" onclick="setTheme('cyberpunk', this)">Cyberpunk Neon</button>
-                        <button class="theme-btn" data-theme="dark" onclick="setTheme('dark', this)">Midnight Dark</button>
+                        <button class="theme-btn active" data-theme="cyberpunk" onclick="setTheme('cyberpunk', this)">🔮 CYBERPUNK NEON</button>
+                        <button class="theme-btn" data-theme="dark" onclick="setTheme('dark', this)">🌙 MIDNIGHT DARK</button>
                     </div>
                 </div>
-            </section>
+            </div>
 
-            <!-- History Logs -->
-            <section class="settings-card full-width">
-                <div class="card-header-flex">
-                    <h3>📜 NEURAL LOGS (GENERATION HISTORY)</h3>
-                    <button class="danger-btn" onclick="clearHistory()">CLEAR ALL LOGS</button>
+            <!-- 3. RENDER QUALITY SELECTION -->
+            <div class="setting-accordion">
+                <button class="accordion-btn" onclick="toggleAccordion('quality-panel')">
+                    <span>⚡ NEURAL RENDER QUALITY</span>
+                    <span class="chevron">▼</span>
+                </button>
+                <div id="quality-panel" class="accordion-panel hidden">
+                    <p class="panel-desc">Choose image generation resolution engine:</p>
+                    <div class="quality-options">
+                        <button class="quality-btn active" data-quality="standard" onclick="setQuality('standard', this)">
+                            <strong>STANDARD QUALITY</strong>
+                            <span>Fast generation • 1024x1024 base resolution</span>
+                        </button>
+                        <button class="quality-btn" data-quality="high" onclick="setQuality('high', this)">
+                            <strong>ULTRA HIGH-RES (AI ENHANCED)</strong>
+                            <span>Deep detail • AI Upscaled rendering</span>
+                        </button>
+                    </div>
                 </div>
-                <div id="settings-history-grid" class="settings-history-grid">
-                    <!-- Dynamic History Items -->
+            </div>
+
+            <!-- 4. GENERATION HISTORY LOGS -->
+            <div class="setting-accordion">
+                <button class="accordion-btn" onclick="toggleAccordion('history-panel')">
+                    <span>📜 GENERATION HISTORY LOGS</span>
+                    <span class="chevron">▼</span>
+                </button>
+                <div id="history-panel" class="accordion-panel hidden">
+                    <div class="card-header-flex">
+                        <p class="panel-desc">Your recent neural generation outputs:</p>
+                        <button class="danger-btn" onclick="clearHistory()">CLEAR ALL LOGS</button>
+                    </div>
+                    <div id="settings-history-grid" class="settings-history-grid">
+                        <!-- Dynamic Renders Load Here -->
+                    </div>
                 </div>
-            </section>
+            </div>
+
         </div>
     </main>
 
